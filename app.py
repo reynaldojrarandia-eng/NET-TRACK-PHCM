@@ -241,7 +241,6 @@ if not st.session_state['logged_in']:
 
                     except Exception as e:
                         st.error(f"Registration failed: {str(e)}")
-    name = full_name
 # --- 5. MAIN SYSTEM VIEW ---
 else:
     # Everything inside this 'else' only runs AFTER a successful login
@@ -272,6 +271,7 @@ else:
                 if res.data:
                     r = res.data[0]
                     # Math for grades
+                    name = r.get('full_name',0)
                     raw_p = r.get('participation_score', 0)
                     a_score = r.get('assignment_score', 0)
                     q_score = r.get('quiz_score', 0)
