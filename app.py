@@ -654,7 +654,7 @@ else:
             tier, color, glow = "Junior Analyst", "#f87171", "rgba(248, 113, 113, 0.2)"
 
         st.title("🎯 AI-Powered Practice Quiz")
-        st.caption(f"Currently Authenticated as: {tier}")
+        st.caption(f"Currently Authenticated as: {name}")
 
         # 3. The Interactive Button Logic
         if st.button(f"Generate New {tier} Challenge", use_container_width=True):
