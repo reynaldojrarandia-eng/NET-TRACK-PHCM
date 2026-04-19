@@ -568,7 +568,7 @@ else:
                 st.subheader("🤖 NET-TRACK Adaptive AI Coach")
     
                 # 1. LOGIC: Using your final_db_grade variable
-                grade = final_db_grade 
+                grade = final_grade 
     
                 # Define Tiers and UI Colors
                 if grade >= 85:
