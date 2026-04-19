@@ -242,8 +242,6 @@ if not st.session_state['logged_in']:
                     except Exception as e:
                         st.error(f"Registration failed: {str(e)}")
 
-
-
 # --- 5. MAIN SYSTEM VIEW ---
 else:
     with st.sidebar:
@@ -271,16 +269,14 @@ else:
         primary_weakness = "General Networking"
         raw_p, a_score, q_score, e_score = 0, 0, 0, 0
 
-        # Use .get() to avoid KeyErrors if the user isn't logged in yet
-        current_role = st.session_state.get('user_role')
-        current_user = st.session_state.get('username')
-
-        if current_role == "Student" and current_user:
+        if st.session_state.get('logged_in') and st.session_state.get('user_role') == "Student":
             try:
-                cloud_res = supabase.table("student_analytics").select("*").eq("student_id", current_user).execute()
-
-                if cloud_res.data and len(cloud_res.data) > 0:
-                    r = cloud_res.data[0]
+                # 2. Add a .limit(1) to make the query faster and less likely to time out
+                current_user = st.session_state.get('username')
+                response = supabase.table("student_analytics").select("*").eq("student_id", current_user).limit(1).execute()
+        
+                if response.data:
+                    r = response.data[0]
 
                     raw_p = r.get('participation_score', 0)
                     absences = r.get('absent_count', 0)
