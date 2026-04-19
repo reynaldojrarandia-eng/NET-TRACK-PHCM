@@ -708,4 +708,6 @@ if st.session_state['user_role'] == "Student":
                 if st.session_state.quiz_feedback == correct_letter:
                     st.success(f"🎯 CORRECT! {explanation}")
                 else:
-                    st.error(f"❌ INCORRECT. The correct answer was {correct_letter}. {explanation}")
+                    st.error(f"""❌ INCORRECT. 
+                             The correct answer was {correct_letter}. 
+                             {explanation}""")
