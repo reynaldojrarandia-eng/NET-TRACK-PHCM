@@ -694,20 +694,26 @@ if st.session_state['user_role'] == "Student":
             st.markdown(f"### 📡 {tier} Simulation")
             # Split logic to hide the answer initially
             parts = st.session_state.quiz_data.split("CORRECT:")
-            st.write(parts[0]) 
+            with st.container(border=True):
+                st.markdown(parts[0].replace("SCENARIO:", "### 📝 Scenario").replace("QUESTION:", "#### ❓ Question"))
+
+            st.write("---")
+            st.write("### 🕹️ Select your response:") 
 
             c1, c2, c3 = st.columns(3)
-            if c1.button("Select A"): st.session_state.quiz_feedback = "A"
-            if c2.button("Select B"): st.session_state.quiz_feedback = "B"
-            if c3.button("Select C"): st.session_state.quiz_feedback = "C"
+            if c1.button("OPTION A", use_container_width=True): st.session_state.quiz_feedback = "A"
+            if c2.button("OPTION B", use_container_width=True): st.session_state.quiz_feedback = "B"
+            if c3.button("OPTION C", use_container_width=True): st.session_state.quiz_feedback = "C"
 
             if st.session_state.quiz_feedback:
+                st.write("<br>", unsafe_allow_html=True) # Adds vertical space
+        
                 correct_letter = parts[1][1:2].strip()
                 explanation = st.session_state.quiz_data.split("EXPLANATION:")[1]
-
+        
                 if st.session_state.quiz_feedback == correct_letter:
-                    st.success(f"🎯 CORRECT! {explanation}")
+                    st.success(f"### 🎯 EXCELLENT WORK!\n\n**Correct Answer:** {correct_letter}\n\n**Analysis:** {explanation}")
+                    st.balloons() 
                 else:
-                    st.error(f"""❌ INCORRECT. 
-                             The correct answer was {correct_letter}. 
-                             {explanation}""")
+                    st.error(f"### ❌ SYSTEM BREACH: INCORRECT\n\n**Required Protocol:** Option {correct_letter}\n\n**Debrief:** {explanation}")
+                    st.warning("⚠️ Review the scenario and try a new challenge to recalibrate.")
