@@ -269,7 +269,34 @@ else:
             st.session_state.clear()
             st.rerun()
 
-    # --- ROUTING LOGIC (All dashboards must be here) ---
+# --- GLOBAL DATA FETCHING (AFTER SIDEBAR, BEFORE NAVIGATION BLOCKS) ---
+if st.session_state['user_role'] == "Student":
+    # 1. Fetch current student's analytics [cite: 535]
+    cloud_res = supabase.table("student_analytics").select("*").eq("student_id", st.session_state['username']).execute()
+
+    if cloud_res.data:
+        r = cloud_res.data[0] # [cite: 537]
+        
+        # 2. Extract raw data [cite: 538, 541, 542, 543]
+        raw_p = r.get('participation_score', 0)
+        absences = r.get('absent_count', 0)
+        a_score = r.get('assignment_score', 0)
+        q_score = r.get('quiz_score', 0)
+        e_score = r.get('exam_score', 0)
+        
+        # 3. Calculate Global Variables [cite: 540, 544]
+        merged_participation = max(0, raw_p - (absences * 5))
+        final_grade = (merged_participation * 0.2) + (a_score * 0.2) + (q_score * 0.2) + (e_score * 0.4)
+        
+        # 4. Identify Weakness (Adjust this logic as needed)
+        scores = {"Participation": merged_participation, "Assignments": a_score, "Quizzes": q_score, "Exam": e_score}
+        primary_weakness = min(scores, key=scores.get)
+    else:
+        # Defaults if no data is found
+        final_grade = 0
+        primary_weakness = "General Networking"
+
+# --- ROUTING LOGIC (All dashboards must be here) ---
 # -- TEACHER DASHBOARD --
     if st.session_state['page'] == "Teacher Dashboard":
         st.title("👨‍🏫 Faculty Grade Management")
@@ -621,13 +648,64 @@ else:
     elif st.session_state['page'] == "Practice Quiz":
         st.title("🎯 AI-Powered Practice Quiz")
         
-        target_topic = st.session_state.get('current_weakness')
-        if not target_topic or target_topic == "None":
-            target_topic = "Networking Fundamentals"
-        st.info(f"Targeting: **{target_topic}**")
-        
-        if st.button("✨ Generate Custom Quiz"):
-            with st.spinner("AI is generating questions..."):
-                quiz_prompt = f"Generate 3 multiple choice questions about {target_topic} for a CS student."
-                ai_quiz = ask_ai(quiz_prompt) # <--- Changed to ask_ai
-                st.markdown(ai_quiz)
+        # 1. Initialize Session State for interactive buttons
+        if 'quiz_data' not in st.session_state:
+            st.session_state.quiz_data = None
+        if 'quiz_feedback' not in st.session_state:
+            st.session_state.quiz_feedback = None
+
+        st.title("🛡️ NET-TRACK Interactive Practice Lab")
+
+        # 2. Use your existing final_grade variable
+        # (Make sure this variable is available in this scope)
+        grade = final_grade 
+    
+        if grade >= 85:
+            tier, persona, color = "Network Architect", "Lead Engineer", "#00FF41"
+            diff_label = "EXPERT TROUBLESHOOTING"
+        elif grade >= 75:
+            tier, persona, color = "Network Technician", "Senior Tech", "#00BFFF"
+            diff_label = "INTERMEDIATE CONFIG"
+        else:
+            tier, persona, color = "Junior Analyst", "Support Mentor", "#FF4B4B"
+            diff_label = "FOUNDATIONAL LOGIC"
+
+        # 3. The Interactive Button Logic
+        if st.button(f"Generate {tier} Level Challenge"):
+            with st.spinner("Provisioning virtual lab scenario..."):
+                quiz_prompt = f"""
+                Act as a {persona}. Generate ONE interactive multiple-choice question for a {tier}.
+                The student is struggling with {primary_weakness}.
+            
+                Format EXACTLY:
+                SCENARIO: [The context]
+                QUESTION: [The question]
+                A) [Option]
+                B) [Option]
+                C) [Option]
+                CORRECT: [A, B, or C]
+                EXPLANATION: [The why]
+                """
+                st.session_state.quiz_data = ask_ai(quiz_prompt)
+                st.session_state.quiz_feedback = None 
+
+        # 4. Display & Interaction
+        if st.session_state.quiz_data:
+            st.markdown(f"### 📡 {tier} Simulation")
+            # Split logic to hide the answer initially
+            parts = st.session_state.quiz_data.split("CORRECT:")
+            st.write(parts[0]) 
+
+            c1, c2, c3 = st.columns(3)
+            if c1.button("Select A"): st.session_state.quiz_feedback = "A"
+            if c2.button("Select B"): st.session_state.quiz_feedback = "B"
+            if c3.button("Select C"): st.session_state.quiz_feedback = "C"
+
+            if st.session_state.quiz_feedback:
+                correct_letter = parts[1][1:2].strip()
+                explanation = st.session_state.quiz_data.split("EXPLANATION:")[1]
+
+                if st.session_state.quiz_feedback == correct_letter:
+                    st.success(f"🎯 CORRECT! {explanation}")
+                else:
+                    st.error(f"❌ INCORRECT. The correct answer was {correct_letter}. {explanation}")
