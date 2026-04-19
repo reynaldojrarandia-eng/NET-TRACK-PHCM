@@ -261,6 +261,7 @@ else:
 
         # --- THE FIX: Wrap the data fetch inside a check ---
         # Initialize defaults first so the app doesn't crash
+        name = 'full_name' 
         final_grade = 0
         primary_weakness = "General Networking"
 
@@ -603,7 +604,7 @@ else:
                 # 2. PROMPT: Driving engagement and specific formatting
                 coach_prompt = f"""
                 Role: {persona} ({tier}).
-                Context: Student has a grade of {grade}% and struggles with {primary_weakness}.
+                Context: {name} has a grade of {grade}% and struggles with {primary_weakness}.
                 Task: Provide a 3-part interactive challenge.
     
                 Format:
