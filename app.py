@@ -666,7 +666,7 @@ else:
                 Role: {persona}. Generate one networking question for a {tier} level.
                 Focus on: {primary_weakness}.
             
-                Format EXACTLY:
+                Follow this Format as it is with the Options Vertically:
                 SCENARIO: [The context]
                 QUESTION: [The question]
                 A) [Option]
