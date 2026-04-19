@@ -647,10 +647,10 @@ else:
         grade = final_grade 
     
         if grade >= 85:
-            tier, persona, color = "Network Architect", "Lead Engineer", "#00FF41"
+            tier, persona, color = "Network Architect", "Lead Engineer", "#4ade80"
             diff_label = "EXPERT TROUBLESHOOTING"
         elif grade >= 75:
-            tier, persona, color = "Network Technician", "Senior Tech", "#00BFFF"
+            tier, persona, color = "Network Technician", "Senior Tech", "#60a5fa"
             diff_label = "INTERMEDIATE CONFIG"
         else:
             tier, persona, color = "Junior Analyst", "Support Mentor", "#FF4B4B"
@@ -666,7 +666,7 @@ else:
                 Role: {persona}. Generate one networking question for a {tier} level.
                 Focus on: {primary_weakness}.
             
-                Follow this Format as it is with the Options Vertically:
+                Format EXACTLY as follows:
                 SCENARIO: [The context]
                 QUESTION: [The question]
                 A) [Option]
@@ -678,40 +678,46 @@ else:
                 st.session_state.quiz_data = ask_ai(quiz_prompt)
                 st.session_state.quiz_feedback = None 
 
-        # --- 4. DISPLAY INTERFACE ---
+        # --- 4. DISPLAY & INTERACTION ---
         if st.session_state.quiz_data:
+            # Robust Parsing Logic
+            raw = st.session_state.quiz_data
             try:
-                # Parsing the AI response
-                parts = st.session_state.quiz_data.split("CORRECT:")
-                main_content = parts[0]
-                answer_part = parts[1].split("EXPLANATION:")
-                correct_letter = answer_part[0].strip()
-                explanation = answer_part[1].strip()
+                scenario = raw.split("SCENARIO:")[1].split("QUESTION:")[0].strip()
+                question = raw.split("QUESTION:")[1].split("A)")[0].strip()
+                opt_a = raw.split("A)")[1].split("B)")[0].strip()
+                opt_b = raw.split("B)")[1].split("C)")[0].strip()
+                opt_c = raw.split("C)")[1].split("CORRECT:")[0].strip()
+                correct_ans = raw.split("CORRECT:")[1].split("EXPLANATION:")[0].strip().upper()
+                explanation = raw.split("EXPLANATION:")[1].strip()
 
-                # UI: The Scenario Box (Terminal Style)
-                st.markdown(f"""
-                    <div style="background-color: #111827; border-left: 5px solid {color}; padding: 20px; border-radius: 5px; font-family: monospace;">
-                        <span style="color: {color}; font-weight: bold;">[SYSTEM LOG: {tier.upper()} MODE]</span><br><br>
-                        <div style="color: #e5e7eb;">{main_content.replace('SCENARIO:', '<b>SCENARIO:</b>').replace('QUESTION:', '<br><b>QUESTION:</b>')}</div>
-                    </div>
-                """, unsafe_allow_html=True)
-
-                st.write("<br>", unsafe_allow_html=True)
-
-                # UI: Interactive Buttons
-                cols = st.columns(3)
-                if cols[0].button("SELECT A", use_container_width=True): st.session_state.quiz_feedback = "A"
-                if cols[1].button("SELECT B", use_container_width=True): st.session_state.quiz_feedback = "B"
-                if cols[2].button("SELECT C", use_container_width=True): st.session_state.quiz_feedback = "C"
-
-                # --- 5. FEEDBACK LOGIC ---
-                if st.session_state.quiz_feedback:
+            # UI: Theme-aware container (Removes the hard-coded dark background)
+                with st.container(border=True):
+                    st.markdown(f"<h5 style='color:{color};'>{tier.upper()} MISSION BRIEFING</h5>", unsafe_allow_html=True)
+                    st.write(f"**Scenario:** {scenario}")
+                    st.write(f"**Question:** {question}")
                     st.write("---")
-                    if st.session_state.quiz_feedback == correct_letter:
-                        st.success(f"### ✅ PROTOCOL VALIDATED\n**Correct Choice:** {correct_letter}\n\n**Analysis:** {explanation}")
+                    # Vertical Options Display
+                    st.write(f"**A)** {opt_a}")
+                    st.write(f"**B)** {opt_b}")
+                    st.write(f"**C)** {opt_c}")
+
+                # UI: Vertically Aligned Buttons
+                st.write("### 🕹️ Select Protocol:")
+                v_col1, v_col2, v_col3 = st.columns(3) # Keeping buttons horizontal for space, but labels vertical above
+                if v_col1.button("A", use_container_width=True): st.session_state.quiz_feedback = "A"
+                if v_col2.button("B", use_container_width=True): st.session_state.quiz_feedback = "B"
+                if v_col3.button("C", use_container_width=True): st.session_state.quiz_feedback = "C"
+
+                # --- 5. FEEDBACK ---
+                if st.session_state.quiz_feedback:
+                    # We use .startswith() to ensure "A" matches "A)" or "A " from the AI
+                    if st.session_state.quiz_feedback in correct_ans:
+                        st.success(f"### ✅ CORRECT\n**The answer is {correct_ans}.**\n\n{explanation}")
                         st.balloons()
                     else:
-                        st.error(f"### ❌ PACKET LOSS: INCORRECT\n**Expected Protocol:** {correct_letter}\n\n**Debrief:** {explanation}")
-                
+                        st.error(f"### ❌ INCORRECT\n**The required protocol was {correct_ans}.**\n\n**Debrief:** {explanation}")
+
             except Exception as e:
-                st.warning("The AI output format was inconsistent. Please generate a new challenge.")
+                st.error("Protocol Error: The AI response format was corrupted. Please re-generate.")
+                st.expander("Debug View").write(raw)
