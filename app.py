@@ -638,18 +638,12 @@ else:
                     st.error(f"Logic Error: {e}")
 
     elif st.session_state['page'] == "Practice Quiz":
-        st.title("🎯 AI-Powered Practice Quiz")
         
-        # 1. Initialize Session State for interactive buttons
         if 'quiz_data' not in st.session_state:
             st.session_state.quiz_data = None
         if 'quiz_feedback' not in st.session_state:
             st.session_state.quiz_feedback = None
 
-        st.title("🛡️ NET-TRACK Interactive Practice Lab")
-
-        # 2. Use your existing final_grade variable
-        # (Make sure this variable is available in this scope)
         grade = final_grade 
     
         if grade >= 85:
@@ -662,12 +656,15 @@ else:
             tier, persona, color = "Junior Analyst", "Support Mentor", "#FF4B4B"
             diff_label = "FOUNDATIONAL LOGIC"
 
+        st.title("🎯 AI-Powered Practice Quiz")
+        st.caption(f"Currently Authenticated as: {tier}")
+
         # 3. The Interactive Button Logic
-        if st.button(f"Generate {tier} Level Challenge"):
+        if st.button(f"Generate New {tier} Challenge", use_container_width=True):
             with st.spinner("Provisioning virtual lab scenario..."):
                 quiz_prompt = f"""
-                Act as a {persona}. Generate ONE interactive multiple-choice question for a {tier}.
-                The student is struggling with {primary_weakness}.
+                Role: {persona}. Generate one networking question for a {tier} level.
+                Focus on: {primary_weakness}.
             
                 Format EXACTLY:
                 SCENARIO: [The context]
@@ -681,31 +678,40 @@ else:
                 st.session_state.quiz_data = ask_ai(quiz_prompt)
                 st.session_state.quiz_feedback = None 
 
-        # 4. Display & Interaction
+        # --- 4. DISPLAY INTERFACE ---
         if st.session_state.quiz_data:
-            st.markdown(f"### 📡 {tier} Simulation")
-            # Split logic to hide the answer initially
-            parts = st.session_state.quiz_data.split("CORRECT:")
-            with st.container(border=True):
-                st.markdown(parts[0].replace("SCENARIO:", "### 📝 Scenario").replace("QUESTION:", "#### ❓ Question"))
+            try:
+                # Parsing the AI response
+                parts = st.session_state.quiz_data.split("CORRECT:")
+                main_content = parts[0]
+                answer_part = parts[1].split("EXPLANATION:")
+                correct_letter = answer_part[0].strip()
+                explanation = answer_part[1].strip()
 
-            st.write("---")
-            st.write("### 🕹️ Select your response:") 
+                # UI: The Scenario Box (Terminal Style)
+                st.markdown(f"""
+                    <div style="background-color: #111827; border-left: 5px solid {color}; padding: 20px; border-radius: 5px; font-family: monospace;">
+                        <span style="color: {color}; font-weight: bold;">[SYSTEM LOG: {tier.upper()} MODE]</span><br><br>
+                        <div style="color: #e5e7eb;">{main_content.replace('SCENARIO:', '<b>SCENARIO:</b>').replace('QUESTION:', '<br><b>QUESTION:</b>')}</div>
+                    </div>
+                """, unsafe_allow_html=True)
 
-            c1, c2, c3 = st.columns(3)
-            if c1.button("OPTION A", use_container_width=True): st.session_state.quiz_feedback = "A"
-            if c2.button("OPTION B", use_container_width=True): st.session_state.quiz_feedback = "B"
-            if c3.button("OPTION C", use_container_width=True): st.session_state.quiz_feedback = "C"
+                st.write("<br>", unsafe_allow_html=True)
 
-            if st.session_state.quiz_feedback:
-                st.write("<br>", unsafe_allow_html=True) # Adds vertical space
-        
-                correct_letter = parts[1][1:2].strip()
-                explanation = st.session_state.quiz_data.split("EXPLANATION:")[1]
-        
-                if st.session_state.quiz_feedback == correct_letter:
-                    st.success(f"### 🎯 EXCELLENT WORK!\n\n**Correct Answer:** {correct_letter}\n\n**Analysis:** {explanation}")
-                    st.balloons() 
-                else:
-                    st.error(f"### ❌ SYSTEM BREACH: INCORRECT\n\n**Required Protocol:** Option {correct_letter}\n\n**Debrief:** {explanation}")
-                    st.warning("⚠️ Review the scenario and try a new challenge to recalibrate.")
+                # UI: Interactive Buttons
+                cols = st.columns(3)
+                if cols[0].button("SELECT A", use_container_width=True): st.session_state.quiz_feedback = "A"
+                if cols[1].button("SELECT B", use_container_width=True): st.session_state.quiz_feedback = "B"
+                if cols[2].button("SELECT C", use_container_width=True): st.session_state.quiz_feedback = "C"
+
+                # --- 5. FEEDBACK LOGIC ---
+                if st.session_state.quiz_feedback:
+                    st.write("---")
+                    if st.session_state.quiz_feedback == correct_letter:
+                        st.success(f"### ✅ PROTOCOL VALIDATED\n**Correct Choice:** {correct_letter}\n\n**Analysis:** {explanation}")
+                        st.balloons()
+                    else:
+                        st.error(f"### ❌ PACKET LOSS: INCORRECT\n**Expected Protocol:** {correct_letter}\n\n**Debrief:** {explanation}")
+                
+            except Exception as e:
+                st.warning("The AI output format was inconsistent. Please generate a new challenge.")
