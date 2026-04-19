@@ -241,7 +241,7 @@ if not st.session_state['logged_in']:
 
                     except Exception as e:
                         st.error(f"Registration failed: {str(e)}")
-
+    name = full_name
 # --- 5. MAIN SYSTEM VIEW ---
 else:
     # Everything inside this 'else' only runs AFTER a successful login
@@ -261,7 +261,6 @@ else:
 
         # --- THE FIX: Wrap the data fetch inside a check ---
         # Initialize defaults first so the app doesn't crash
-        name = 'full_name' 
         final_grade = 0
         primary_weakness = "General Networking"
 
