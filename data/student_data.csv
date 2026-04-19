@@ -1,0 +1,7 @@
+student_id,accuracy_score,config_errors,lab_completion_time,status,days_late,missed_tasks
+m23-2545-254,45,12,85,Fail,5,"VLAN Config, Subnetting Lab"
+2021-10042,88,2,40,Pass,0,"None"
+2022-10500,72,5,65,Pass,1,"OSPF Basics"
+2021-00982,30,18,110,Fail,7,"Static Routing, IP Addressing"
+2023-11200,95,1,35,Pass,0,"None"
+2022-00431,55,9,95,Fail,3,"Switch Security"

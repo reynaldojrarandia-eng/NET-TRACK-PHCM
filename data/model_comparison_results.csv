@@ -1,0 +1,7 @@
+student_id,lab_completion_time,accuracy_score,attempts,final_grade,status,RF_Prediction,SVM_Prediction
+1,45,95,1,90,Pass,Pass,Pass
+2,120,40,3,55,Fail,Fail,Fail
+3,60,85,1,85,Pass,Pass,Pass
+4,95,65,2,70,Pass,Pass,Pass
+5,130,30,4,45,Fail,Fail,Fail
+6,50,90,1,92,Pass,Pass,Pass
