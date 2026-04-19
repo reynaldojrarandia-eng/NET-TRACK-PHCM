@@ -269,28 +269,42 @@ else:
             st.session_state.clear()
             st.rerun()
 
-# --- GLOBAL DATA FETCHING ---
-# Initialize variables with None/0 so the app doesn't crash if they aren't set
+# --- GLOBAL DATA FETCHING (V2 - BULLETPROOF) ---
+# Initialize defaults so every page can see them without crashing
 final_grade = 0
 primary_weakness = "General Networking"
+raw_p, a_score, q_score, e_score = 0, 0, 0, 0
 
-if st.session_state.get('user_role') == "Student" == "Teacher Dashboard":
-    # Only run this if the user is a student
-    cloud_res = supabase.table("student_analytics").select("*").eq("student_id", st.session_state['username']).execute()
+# Use .get() to avoid KeyErrors if the user isn't logged in yet
+current_role = st.session_state.get('user_role')
+current_user = st.session_state.get('username')
 
-    if cloud_res.data:
-        r = cloud_res.data[0]
-        raw_p = r.get('participation_score', 0)
-        absences = r.get('absent_count', 0)
-        a_score = r.get('assignment_score', 0)
-        q_score = r.get('quiz_score', 0)
-        e_score = r.get('exam_score', 0)
-        
-        merged_participation = max(0, raw_p - (absences * 5))
-        final_grade = (merged_participation * 0.2) + (a_score * 0.2) + (q_score * 0.2) + (e_score * 0.4)
-        
-        scores = {"Participation": merged_participation, "Assignments": a_score, "Quizzes": q_score, "Exam": e_score}
-        primary_weakness = min(scores, key=scores.get)
+if current_role == "Student" and current_user:
+    try:
+        # Wrap Supabase call in a try-except to catch the APIError
+        cloud_res = supabase.table("student_analytics").select("*").eq("student_id", current_user).execute()
+
+        if cloud_res.data and len(cloud_res.data) > 0:
+            r = cloud_res.data[0]
+            
+            # Fetch scores with defaults
+            raw_p = r.get('participation_score', 0)
+            absences = r.get('absent_count', 0)
+            a_score = r.get('assignment_score', 0)
+            q_score = r.get('quiz_score', 0)
+            e_score = r.get('exam_score', 0)
+            
+            # Weighted Calculation
+            merged_participation = max(0, raw_p - (absences * 5))
+            final_grade = (merged_participation * 0.2) + (a_score * 0.2) + (q_score * 0.2) + (e_score * 0.4)
+            
+            # Weakness Logic
+            scores_map = {"Participation": merged_participation, "Assignments": a_score, "Quizzes": q_score, "Exam": e_score}
+            primary_weakness = min(scores_map, key=scores_map.get)
+    except Exception as e:
+        # This prevents the whole app from crashing if Supabase is down/buggy
+        print(f"Supabase Global Fetch Error: {e}")
+        st.sidebar.warning("⚠️ Analytics Syncing... Some features may be limited.")
 
 # --- ROUTING LOGIC (All dashboards must be here) ---
 # -- TEACHER DASHBOARD --
