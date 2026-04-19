@@ -269,32 +269,28 @@ else:
             st.session_state.clear()
             st.rerun()
 
-# --- GLOBAL DATA FETCHING (AFTER SIDEBAR, BEFORE NAVIGATION BLOCKS) ---
-if st.session_state['user_role'] == "Student":
-    # 1. Fetch current student's analytics [cite: 535]
+# --- GLOBAL DATA FETCHING ---
+# Initialize variables with None/0 so the app doesn't crash if they aren't set
+final_grade = 0
+primary_weakness = "General Networking"
+
+if st.session_state.get('user_role') == "Student":
+    # Only run this if the user is a student
     cloud_res = supabase.table("student_analytics").select("*").eq("student_id", st.session_state['username']).execute()
 
     if cloud_res.data:
-        r = cloud_res.data[0] # [cite: 537]
-        
-        # 2. Extract raw data [cite: 538, 541, 542, 543]
+        r = cloud_res.data[0]
         raw_p = r.get('participation_score', 0)
         absences = r.get('absent_count', 0)
         a_score = r.get('assignment_score', 0)
         q_score = r.get('quiz_score', 0)
         e_score = r.get('exam_score', 0)
         
-        # 3. Calculate Global Variables [cite: 540, 544]
         merged_participation = max(0, raw_p - (absences * 5))
         final_grade = (merged_participation * 0.2) + (a_score * 0.2) + (q_score * 0.2) + (e_score * 0.4)
         
-        # 4. Identify Weakness (Adjust this logic as needed)
         scores = {"Participation": merged_participation, "Assignments": a_score, "Quizzes": q_score, "Exam": e_score}
         primary_weakness = min(scores, key=scores.get)
-    else:
-        # Defaults if no data is found
-        final_grade = 0
-        primary_weakness = "General Networking"
 
 # --- ROUTING LOGIC (All dashboards must be here) ---
 # -- TEACHER DASHBOARD --
