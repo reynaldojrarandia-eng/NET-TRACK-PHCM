@@ -697,8 +697,8 @@ else:
                        border-radius: 10px; 
                        margin-bottom: 20px;">
                        <span style="color: {color}; font-weight: bold; letter-spacing: 1.5px;">[ {tier.upper()} BRIEFING ]</span><br><br>
-                       <b style="font-size: 1.1em; font-family: 'Courier New', Courier, monospace;">SCENARIO:</b><br>{scenario}<br><br>
-                       <b style="font-size: 1.1em; font-family: 'Courier New', Courier, monospace; color: {color};">QUESTION:</b><br>{question}
+                       <b style="font-size: 1.1em;">SCENARIO:</b><br>{scenario}<br><br>
+                       <b style="font-size: 1.1em; color: {color};">QUESTION:</b><br>{question}
                     </div>
                 """, unsafe_allow_html=True)
 
