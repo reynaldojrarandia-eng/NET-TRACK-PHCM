@@ -557,7 +557,6 @@ else:
         if cloud_res.data:
             r = cloud_res.data[0]
             raw_p = r.get('participation_score', 0)
-            name = r.get('full_name', 'Unknown Name')
             absences = r.get('absent_count', 0)
             merged_participation = max(0, raw_p - (absences * 5))
             a_score = r.get('assignment_score', 0)
@@ -584,7 +583,7 @@ else:
 
             # --- REPLACEMENT FOR AI COACH SECTION ---
             with st.container(border=True):
-                st.subheader(f"🤖 NET-TRACK Adaptive AI Coach {name}")
+                st.subheader("🤖 NET-TRACK Adaptive AI Coach")
     
                 # 1. LOGIC: Using your final_db_grade variable
                 grade = final_grade 
@@ -603,7 +602,7 @@ else:
                 # 2. PROMPT: Driving engagement and specific formatting
                 coach_prompt = f"""
                 Role: {persona} ({tier}).
-                Context: {name} has a grade of {grade}% and struggles with {primary_weakness}.
+                Context: Student has a grade of {grade}% and struggles with {primary_weakness}.
                 Task: Provide a 3-part interactive challenge.
     
                 Format:
@@ -698,8 +697,8 @@ else:
                        border-radius: 10px; 
                        margin-bottom: 20px;">
                        <span style="color: {color}; font-weight: bold; letter-spacing: 1.5px;">[ {tier.upper()} BRIEFING ]</span><br><br>
-                       <b style="font-size: 1.1em;">SCENARIO:</b><br>{scenario}<br><br>
-                       <b style="font-size: 1.1em; color: {color};">QUESTION:</b><br>{question}
+                       <b style="font-size: 1.1em; font-family: 'Courier New', Courier, monospace;">SCENARIO:</b><br>{scenario}<br><br>
+                       <b style="font-size: 1.1em; font-family: 'Courier New', Courier, monospace; color: {color};">QUESTION:</b><br>{question}
                     </div>
                 """, unsafe_allow_html=True)
 
