@@ -271,7 +271,6 @@ else:
                 if res.data:
                     r = res.data[0]
                     # Math for grades
-                    name = r.get('full_name',0)
                     raw_p = r.get('participation_score', 0)
                     a_score = r.get('assignment_score', 0)
                     q_score = r.get('quiz_score', 0)
@@ -558,6 +557,7 @@ else:
         if cloud_res.data:
             r = cloud_res.data[0]
             raw_p = r.get('participation_score', 0)
+            name = r.get('full_name', 'Unknown Name')
             absences = r.get('absent_count', 0)
             merged_participation = max(0, raw_p - (absences * 5))
             a_score = r.get('assignment_score', 0)
@@ -584,7 +584,7 @@ else:
 
             # --- REPLACEMENT FOR AI COACH SECTION ---
             with st.container(border=True):
-                st.subheader("🤖 NET-TRACK Adaptive AI Coach")
+                st.subheader(f"🤖 NET-TRACK Adaptive AI Coach {name}")
     
                 # 1. LOGIC: Using your final_db_grade variable
                 grade = final_grade 
@@ -654,7 +654,7 @@ else:
             tier, color, glow = "Junior Analyst", "#f87171", "rgba(248, 113, 113, 0.2)"
 
         st.title("🎯 AI-Powered Practice Quiz")
-        st.caption(f"Currently Authenticated as: {name}")
+        st.caption(f"Currently Authenticated as: {tier}")
 
         # 3. The Interactive Button Logic
         if st.button(f"Generate New {tier} Challenge", use_container_width=True):
