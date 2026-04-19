@@ -563,29 +563,60 @@ else:
             is_on_track = final_grade >= 75
             c2.metric("Status", "✅ ON TRACK" if is_on_track else "⚠️ AT RISK")
 
+            # --- REPLACEMENT FOR AI COACH SECTION ---
             with st.container(border=True):
-                # --- DYNAMIC AI COACH LOGIC ---
-                st.subheader("🤖 Your AI Academic Coach")
+                st.subheader("🤖 NET-TRACK Adaptive AI Coach")
+    
+                # 1. LOGIC: Using your final_db_grade variable
+                grade = final_db_grade 
+    
+                # Define Tiers and UI Colors
+                if grade >= 85:
+                    tier, persona, color = "Network Architect", "Lead Engineer", "#00FF41"
+                    complexity = "Critical Infrastructure & Advanced Security Design"
+                elif grade >= 75:
+                    tier, persona, color = "Network Technician", "Senior Field Tech", "#00BFFF"
+                    complexity = "Active Configuration & VLAN Implementation"
+                else:
+                    tier, persona, color = "Junior Analyst", "Support Mentor", "#FF4B4B"
+                    complexity = "Foundational OSI Logic & Connectivity Troubleshooting"
 
-                # We use your existing variables: raw_p and q_score
-                # These were already pulled from Supabase above!
+                # 2. PROMPT: Driving engagement and specific formatting
                 coach_prompt = f"""
-                The student has {raw_p}% participation and {q_score}% in quizzes. 
-                They are currently focusing on {primary_weakness}.
-                Give a 2-sentence encouraging advice specifically about their performance.
+                Role: {persona} ({tier}).
+                Context: Student has a grade of {grade}% and struggles with {primary_weakness}.
+                Task: Provide a 3-part interactive challenge.
+    
+                Format:
+                - 🚨 **SITUATION**: Describe a professional scenario about {primary_weakness}.
+                - 🛠️ **CHALLENGE**: Ask a {complexity} question based on the situation.
+                - 💡 **PRO-TIP**: Give one industry-standard command or best practice.
+    
+                Tone: Professional and encouraging. Use technical terminology.
                 """
 
-# --- 3. Call the AI ---
+                # 3. UI: The Terminal-Style Dashboard
                 try:
                     ai_response = ask_ai(coach_prompt)
                     if ai_response:
-                        st.info(ai_response)
+                        st.markdown(f"""
+                            <div style="background-color: #0e1117; border: 2px solid {color}; border-radius: 10px; padding: 20px; font-family: 'Courier New', Courier, monospace;">
+                                <div style="color: {color}; font-weight: bold; margin-bottom: 10px; border-bottom: 1px solid {color}; padding-bottom: 5px;">
+                                    📡 {tier.upper()} INTERFACE | GRADE: {grade}%
+                                </div>
+                                <div style="color: #fafafa; line-height: 1.6;">
+                                    {ai_response.replace('\n', '<br>')}
+                                </div>
+                            </div>
+                        """, unsafe_allow_html=True)
+            
+                        # Interactive Reveal
+                        with st.expander("🔑 Access Solution Strategy"):
+                            st.write(f"Analyzing {primary_weakness}... To solve this as a {tier}, focus on the data link and network layer interactions. Ensure your subnet masks and gateway configurations align with the topology.")
                     else:
-                        # These two lines must be exactly 4 spaces in from the 'else'
-                        status_msg = "Excellent work!" if is_on_track else "Don't give up!"
-                        st.info(f"**NET-TRACK Advice:** {status_msg} Keep focusing on your labs!")
+                        st.warning("Awaiting signal from the AI Coach...")
                 except Exception as e:
-                    st.warning("Coach is temporarily offline. Keep up the good work!")
+                    st.error(f"Logic Error: {e}")
 
     elif st.session_state['page'] == "Practice Quiz":
         st.title("🎯 AI-Powered Practice Quiz")
