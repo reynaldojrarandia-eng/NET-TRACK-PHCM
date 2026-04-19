@@ -244,56 +244,46 @@ if not st.session_state['logged_in']:
 
 # --- 5. MAIN SYSTEM VIEW ---
 else:
+    # Everything inside this 'else' only runs AFTER a successful login
     with st.sidebar:
         st.markdown('<h2 style="color:#4ade80;">NET-TRACK</h2>', unsafe_allow_html=True)
         st.write(f"User: **{st.session_state['username']}** | {st.session_state['user_role']}")
         st.divider()
         
-        # Navigation logic based on role
+        # Define the navigation based on role
         if st.session_state['user_role'] == "Teacher":
             nav = ["Teacher Dashboard", "AI Model Metrics"]
         else:
             nav = ["Dashboard", "Practice Quiz"]
 
-        if st.session_state['page'] not in nav:
-             st.session_state['page'] = nav[0]
-
-        current_index = nav.index(st.session_state['page']) if st.session_state['page'] in nav else 0
-
-        page = st.radio("NAVIGATE", nav, index=current_index, key="nav_radio")
+        page = st.radio("NAVIGATE", nav, key="nav_radio")
         st.session_state['page'] = page
 
-        # --- GLOBAL DATA FETCHING (V2 - BULLETPROOF) ---
-        # Initialize defaults so every page can see them without crashing
+        # --- THE FIX: Wrap the data fetch inside a check ---
+        # Initialize defaults first so the app doesn't crash
         final_grade = 0
         primary_weakness = "General Networking"
-        raw_p, a_score, q_score, e_score = 0, 0, 0, 0
 
-        if st.session_state.get('logged_in') and st.session_state.get('user_role') == "Student":
+        # ONLY fetch if they are a student AND have a username
+        if st.session_state.get('user_role') == "Student" and st.session_state.get('username'):
             try:
-                # 2. Add a .limit(1) to make the query faster and less likely to time out
-                current_user = st.session_state.get('username')
-                response = supabase.table("student_analytics").select("*").eq("student_id", current_user).limit(1).execute()
-        
-                if response.data:
-                    r = response.data[0]
-
+                # Adding a try-except here is the "Safety Net" for the public link
+                res = supabase.table("student_analytics").select("*").eq("student_id", st.session_state['username']).execute()
+                if res.data:
+                    r = res.data[0]
+                    # Math for grades
                     raw_p = r.get('participation_score', 0)
-                    absences = r.get('absent_count', 0)
                     a_score = r.get('assignment_score', 0)
                     q_score = r.get('quiz_score', 0)
                     e_score = r.get('exam_score', 0)
-            
-                # Weighted Calculation
-                merged_participation = max(0, raw_p - (absences * 5))
-                final_grade = (merged_participation * 0.2) + (a_score * 0.2) + (q_score * 0.2) + (e_score * 0.4)
+                    final_grade = (raw_p * 0.2) + (a_score * 0.2) + (q_score * 0.2) + (e_score * 0.4)
+                    
+                    scores = {"Participation": raw_p, "Assignments": a_score, "Quizzes": q_score, "Exam": e_score}
+                    primary_weakness = min(scores, key=scores.get)
+            except Exception:
+                # If Supabase fails, the app keeps running with defaults
+                st.sidebar.warning("⚠️ Syncing limited on public link.")
 
-                # Weakness Logic
-                scores_map = {"Participation": merged_participation, "Assignments": a_score, "Quizzes": q_score, "Exam": e_score}
-                primary_weakness = min(scores_map, key=scores_map.get)
-            except Exception as e:
-                st.sidebar.error("⚠️ Database Sync Error")
-                print(f"Supabase Error: {e}")        
         if st.button("Log Out"):
             st.session_state.clear()
             st.rerun()
