@@ -274,7 +274,7 @@ else:
 final_grade = 0
 primary_weakness = "General Networking"
 
-if st.session_state.get('user_role') == "Student":
+if st.session_state.get('user_role') == "Student" == "Teacher Dashboard":
     # Only run this if the user is a student
     cloud_res = supabase.table("student_analytics").select("*").eq("student_id", st.session_state['username']).execute()
 
