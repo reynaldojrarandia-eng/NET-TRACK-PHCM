@@ -663,10 +663,41 @@ else:
                 Act as a {tier_name} Proctor. Generate 3 questions of type: {st.session_state.current_mode}.
                 Topic: {primary_weakness}.
                 Return ONLY a JSON list.
-                Rules:
-                - MCQ: 'options' must be 3 strings starting with A), B), C). 'correct' is the letter.
-                - Identification: 'correct' is the specific word.
-                - Essay: 'explanation' must contain the key technical concepts for a perfect answer.
+                STRICT REQUIREMENT:
+                Each of the 3 questions MUST have a completely different scenario. 
+                Example: 
+                - Question 1: Corporate Office VPN issue.
+                - Question 2: Data Center switch failure.
+                - Question 3: ISP Routing loops.
+                Do not repeat the same context.
+
+                Return ONLY a JSON list:
+                [
+                  {{
+                    "type": "{st.session_state.current_mode}", 
+                    "scenario": "UNQIUE SCENARIO A", 
+                    "question": "...", 
+                    "options": ["A) ..", "B) ..", "C) .."], 
+                    "correct": "...", 
+                    "explanation": "..."
+                  }},
+                  {{
+                    "type": "{st.session_state.current_mode}", 
+                    "scenario": "UNIQUE SCENARIO B", 
+                    "question": "...", 
+                    "options": ["A) ..", "B) ..", "C) .."], 
+                    "correct": "...", 
+                    "explanation": "..."
+                  }},
+                  {{
+                    "type": "{st.session_state.current_mode}", 
+                    "scenario": "UNIQUE SCENARIO C", 
+                    "question": "...", 
+                    "options": ["A) ..", "B) ..", "C) .."], 
+                    "correct": "...", 
+                    "explanation": "..."
+                  }}
+                ]
                 """
                 raw_response = ask_ai(quiz_prompt)
 
