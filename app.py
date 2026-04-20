@@ -638,119 +638,99 @@ else:
                     st.error(f"Logic Error: {e}")
 
     elif st.session_state['page'] == "Practice Quiz":
-        # 1. INIT STATE
+        # 1. Initialize session states safely
         if 'quiz_batch' not in st.session_state: st.session_state.quiz_batch = []
         if 'user_answers' not in st.session_state: st.session_state.user_answers = {}
         if 'quiz_submitted' not in st.session_state: st.session_state.quiz_submitted = False
-        if 'current_mode' not in st.session_state: st.session_state.current_mode = "MCQ"
-        if 'batch_id' not in st.session_state: st.session_state.batch_id = 0
+        if 'batch_id' not in st.session_state: st.session_state.batch_id = random.randint(1000, 9999)
 
-        # 2. TIER ACCENTS
-        if final_grade >= 85:
-            tier, color = "Network Architect", "#4ade80"
-        elif final_grade >= 75:
-            tier, color = "Network Technician", "#60a5fa"
-        else:
-            tier, color = "Junior Analyst", "#f87171"
+        # 2. Tier Accents (Based on your final_grade logic)
+        color = "#4ade80" if final_grade >= 85 else "#60a5fa" if final_grade >= 75 else "#f87171"
+        tier_name = "Network Architect" if final_grade >= 85 else "Network Technician" if final_grade >= 75 else "Junior Analyst"
 
         st.title("🎯 AI-Powered Practice Lab")
+        st.caption(f"Status: {tier_name} | Logic Mode: Global State")
 
-        # 3. BATCH GENERATOR
-        if st.button(f"Generate New {tier} Challenge", use_container_width=True):
-            import random, re
-            # Randomly select ONE type for the entire batch
+        # 3. Generator Button
+        if st.button(f"Generate New {tier_name} Assessment", use_container_width=True):
             st.session_state.current_mode = random.choice(["MCQ", "Identification", "Essay"])
             st.session_state.quiz_submitted = False
-            st.session_state.batch_id += 1
+            st.session_state.batch_id = random.randint(1000, 9999) # New ID ensures fresh widgets
 
-            with st.spinner(f"📡 Preparing {st.session_state.current_mode} Modules..."):
+            with st.spinner(f"📡 Requesting {st.session_state.current_mode} modules..."):
                 quiz_prompt = f"""
-                Act as a {tier} Proctor. Generate exactly 3 questions of type: {st.session_state.current_mode}.
-                Target Weakness: {primary_weakness}.
-
-                STRICT RULES:
-                1. If MCQ: 'correct' must be A, B, or C. Provide 'options' list.
-                2. If Identification: 'correct' MUST be the actual technical word (e.g. "Router", "BGP", "Latency"). DO NOT provide letters. DO NOT provide options.
-                3. If Essay: 'correct' should be "N/A".
-
-                Return ONLY a JSON list:
-                [
-                  {{
-                    "type": "{st.session_state.current_mode}", 
-                    "scenario": "...", 
-                    "question": "...", 
-                    "options": ["A) ..", "B) ..", "C) .."], # Only if MCQ
-                    "correct": "Letter or Word", # Correct answer or key term
-                    "explanation": "..."
-                  }},
-                  ... (generate 3)
-                ]
+                Act as a {tier_name} Proctor. Generate 3 questions of type: {st.session_state.current_mode}.
+                Topic: {primary_weakness}.
+                Return ONLY a JSON list of objects. No intro text. 
+                Example MCQ: [{{"type":"MCQ","scenario":"...","question":"...","options":["A) x","B) y","C) z"],"correct":"A","explanation":"..."}}]
+                Example Identification: [{{"type":"Identification","scenario":"...","question":"...","correct":"Router","explanation":"..."}}]
                 """
-                response = ask_ai(quiz_prompt)
-                try:
-                    json_match = re.search(r'\[.*\]', response, re.DOTALL)
-                    if json_match:
-                        clean_json = json_match.group(0)
-                        st.session_state.quiz_batch = json.loads(clean_json)
-                        st.session_state.user_answers = {} 
-                    else:
-                        raise ValueError("No JSON found") 
-                except:
-                    st.error("AI Sync Error. Please retry.")
 
-        # 4. DISPLAY QUESTIONS
+                raw_response = ask_ai(quiz_prompt)
+
+                # --- THE CLEANER: This prevents the "JSON Decode" errors ---
+                try:
+                    # Find the first '[' and last ']' to ignore AI's conversational text
+                    start_idx = raw_response.find('[')
+                    end_idx = raw_response.rfind(']') + 1
+                    if start_idx != -1 and end_idx != 0:
+                        clean_json = raw_response[start_idx:end_idx]
+                        st.session_state.quiz_batch = json.loads(clean_json)
+                        st.session_state.user_answers = {}
+                    else:
+                        st.error("AI sent an invalid format. Please click Generate again.")
+                except Exception as e:
+                    st.error("Failed to parse quiz data. Re-generating might help.")
+
+        # 4. Display Questions
         if st.session_state.quiz_batch:
             st.info(f"**Current Assessment Mode:** {st.session_state.current_mode}")
 
             for i, q in enumerate(st.session_state.quiz_batch):
-
-                unique_key = f"q_{st.session_state.batch_id}_{i}"
-                st.markdown(f"<div style='border-left: 5px solid {color}; padding-left: 15px; margin-top: 20px;'><span style='color:{color}; font-weight:bold;'>[ MODULE {i+1} ]</span></div>", unsafe_allow_html=True)
+                # Unique key combining batch ID and question index
+                u_key = f"quiz_{st.session_state.batch_id}_{i}"
 
                 with st.container(border=True):
-                    st.write(f"**Scenario:** {q['scenario']}")
-                    st.write(f"**Question:** {q['question']}")
+                    st.markdown(f"<b style='color:{color};'>[ MODULE {i+1} ]</b>", unsafe_allow_html=True)
+                    st.write(f"**Scenario:** {q.get('scenario', 'N/A')}")
+                    st.write(f"**Question:** {q.get('question', 'N/A')}")
 
-                    # Input based on the selected Mode
                     if st.session_state.current_mode == "MCQ":
-                        st.session_state.user_answers[i] = st.radio(f"Select Answer:", q.get('options', []), key=f"q_{i}") 
-                    elif st.session_state.current_mode == "Identification":
-                        st.session_state.user_answers[i] = st.text_input(f"Terminal Input:", key=f"q_{i}")
-                    elif st.session_state.current_mode == "Essay":
-                        st.session_state.user_answers[i] = st.text_area(f"Technical Analysis:", key=f"q_{i}")
+                        # Fallback for options to prevent crash
+                        opts = q.get('options', ["A) Option Missing", "B) Option Missing", "C) Option Missing"])
+                        st.session_state.user_answers[i] = st.radio("Select Protocol:", opts, key=u_key)
 
-            # 5. SUBMISSION
+                    elif st.session_state.current_mode == "Identification":
+                        st.session_state.user_answers[i] = st.text_input("Terminal Entry:", key=u_key)
+
+                    elif st.session_state.current_mode == "Essay":
+                        st.session_state.user_answers[i] = st.text_area("Technical Analysis:", key=u_key)
+
+            # 5. Submit Button
             if st.button("SUBMIT ASSESSMENT BATCH", type="primary", use_container_width=True):
                 st.session_state.quiz_submitted = True
 
-            # 6. RESULTS
+            # 6. Results Logic
             if st.session_state.quiz_submitted:
-                st.divider()
+                st.write("---")
                 for i, q in enumerate(st.session_state.quiz_batch):
-                    val = st.session_state.user_answers.get(i, "")
+                    ans = st.session_state.user_answers.get(i, "")
                     with st.expander(f"Review Module {i+1}", expanded=True):
                         if st.session_state.current_mode == "MCQ":
-                            correct_letter = q['correct'].strip().upper()[0] 
-                            if val.strip().upper().startswith(correct_letter):
-                                st.success(f"✅ **Validated:** {q['explanation']}")
+                            # Compare only the first letter
+                            correct_letter = str(q.get('correct', '')).strip().upper()[0:1]
+                            if str(ans).strip().upper().startswith(correct_letter):
+                                st.success(f"✅ Correct! {q.get('explanation', '')}")
                             else:
-                                st.error(f"❌ **Mismatch:** Expected {correct_letter}. {q['explanation']}")
+                                st.error(f"❌ Incorrect. Expected {correct_letter}. {q.get('explanation', '')}")
 
                         elif st.session_state.current_mode == "Identification":
-
-                            clean_user = val.strip().lower().replace('"',"").replace(".","")
-                            clean_target = q['correct'].strip().lower().replace('"',"").replace(".","")
-
-                            is_correct = clean_user == clean_target
-
-                            if is_correct: 
-                                st.success(f"✅ **Recognized:** {q['explanation']}")
-                                st.write(f"*Analysis: {q['explanation']}*")
-                            else: 
-                                st.error(f"❌ **Invalid Input**")
-                                st.write(f"**Your Input:** {val}")
-                                st.write(f"**System Expected:** `{q['correct']}`")
-                                st.info(f"**Proctor's Debrief:** {q['explanation']}")
+                            u_ans = str(ans).strip().lower()
+                            t_ans = str(q.get('correct', '')).strip().lower()
+                            if u_ans == t_ans:
+                                st.success(f"✅ Correct! {q.get('explanation', '')}")
+                            else:
+                                st.error(f"❌ Expected: {q.get('correct')}")
 
                         elif st.session_state.current_mode == "Essay":
-                            st.info(f"📝 **Evaluation Criteria:**\n\n{q['explanation']}")
+                            st.info(f"📝 **Proctor Evaluation Key:**\n\n{q.get('explanation', '')}")
