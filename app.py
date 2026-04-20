@@ -638,112 +638,117 @@ else:
                     st.error(f"Logic Error: {e}")
 
     elif st.session_state['page'] == "Practice Quiz":
-        # 1. Initialize session states safely
+        # 1. STATE INITIALIZATION
         if 'quiz_batch' not in st.session_state: st.session_state.quiz_batch = []
         if 'user_answers' not in st.session_state: st.session_state.user_answers = {}
         if 'quiz_submitted' not in st.session_state: st.session_state.quiz_submitted = False
         if 'batch_id' not in st.session_state: st.session_state.batch_id = random.randint(1000, 9999)
+        if 'current_mode' not in st.session_state: st.session_state.current_mode = "MCQ"
 
-        # 2. Tier Accents (Based on your final_grade logic)
+        # Dynamic Aesthetic based on Grade
         color = "#4ade80" if final_grade >= 85 else "#60a5fa" if final_grade >= 75 else "#f87171"
-        glow = "rgba(74, 222, 128, 0.15)" if final_grade >= 85 else "rgba(96, 165, 250, 0.15)" if final_grade >= 75 else "rgba(248, 113, 113, 0.15)"
+        glow = "rgba(74, 222, 128, 0.2)" if final_grade >= 85 else "rgba(96, 165, 250, 0.2)"
         tier_name = "Network Architect" if final_grade >= 85 else "Network Technician" if final_grade >= 75 else "Junior Analyst"
-        
-        st.title("🛡️ AI-Powered Practice Lab")
-        st.caption(f"Secure Connection: Verified {tier_name} Node")
 
-        # 3. Generator Button
-        if st.button(f"Generate New {tier_name} Assessment", use_container_width=True):
+        st.title("🛡️ NET-TRACK Advanced Practice Lab")
+        st.caption(f"Authenticated as: {tier_name} | Targeting: {primary_weakness}")
+
+        # 2. THE SMART GENERATOR
+        if st.button(f"🚀 Deploy {tier_name} Assessment Batch", use_container_width=True):
             st.session_state.current_mode = random.choice(["MCQ", "Identification", "Essay"])
             st.session_state.quiz_submitted = False
-            st.session_state.batch_id = random.randint(1000, 9999) # New ID ensures fresh widgets
+            st.session_state.batch_id = random.randint(1000, 9999)
 
-            with st.spinner(f"📡 Requesting {st.session_state.current_mode} modules..."):
+            with st.spinner(f"🧠 Synthesizing {st.session_state.current_mode} scenarios..."):
+                # This prompt forces the AI to be creative and provide "Smart" fields
                 quiz_prompt = f"""
-                Act as a {tier_name} Proctor. Generate exactly 3 questions of type: {st.session_state.current_mode}.
-                Target Weakness: {primary_weakness}.
-                
-                STRICT IDENTIFICATION RULES:
-                - If mode is Identification, the question must ask for a SINGLE specific technical term (e.g., "What protocol is being described?", "Identify the specific hardware component.").
-                - The 'scenario' must provide enough technical clues so there is only ONE logical answer.
-                - The 'correct' field MUST be that specific term only.
+                Act as a Senior Network Proctor. Generate 3 UNIQUE modules of type: {st.session_state.current_mode}.
+                Topic Focus: {primary_weakness}.
+
+                STRICT QUALITY REQUIREMENTS:
+                - SCENARIO: Must be a complex 'Field Report'. Include symptoms, error codes, or specific architecture constraints.
+                - QUESTION: Do not ask for definitions. Ask for 'Diagnostic Identification' or 'Architectural Decisions'.
+                - IDENTIFICATION: Provide both 'correct_full' (Formal name) and 'correct_short' (Acronym).
+                - DIVERSITY: Ensure each of the 3 questions uses a different context (e.g., Security, Cloud, Hardware).
 
                 Return ONLY a JSON list:
-                [
-                  {{
-                    "type": "{st.session_state.current_mode}", 
-                    "scenario": "A network admin notices that even though the physical link is up, packets are being dropped due to a loop in the Layer 2 topology.", 
-                    "question": "Identify the IEEE 802.1D protocol used to prevent this loop.", 
-                    "correct": "Spanning Tree Protocol", 
-                    "explanation": "STP prevents loops by placing redundant paths in a blocking state."
-                  }},
-                  ... (generate 2 more unique ones)
-                ]
+                [{{
+                    "scenario": "...",
+                    "question": "...",
+                    "options": ["A) ...", "B) ...", "C) ..."],
+                    "correct_full": "...",
+                    "correct_short": "...",
+                    "explanation": "..."
+                }}]
                 """
                 raw_response = ask_ai(quiz_prompt)
-
-                # --- THE CLEANER: This prevents the "JSON Decode" errors ---
                 try:
-                    # Find the first '[' and last ']' to ignore AI's conversational text
+                    # Robust extraction to handle AI conversational "noise"
                     start = raw_response.find('[')
                     end = raw_response.rfind(']') + 1
                     st.session_state.quiz_batch = json.loads(raw_response[start:end])
                     st.session_state.user_answers = {}
-                except Exception as e:
-                    st.error("Failed to parse quiz data. Re-generating might help.")
+                except:
+                    st.error("AI Logic Desync. Please try deploying again.")
 
-        # 4. Display Questions
+        # 3. INTERFACE DISPLAY
         if st.session_state.quiz_batch:
-            st.markdown(f"<h4 style='color:{color}; text-align:center;'>--- {st.session_state.current_mode.upper()} BATCH ACTIVE ---</h4>", unsafe_allow_html=True)
-
+            st.markdown(f"<h4 style='color:{color}; text-align:center;'>--- {st.session_state.current_mode.upper()} MODE ACTIVE ---</h4>", unsafe_allow_html=True)
+        
             for i, q in enumerate(st.session_state.quiz_batch):
                 u_key = f"lab_{st.session_state.batch_id}_{i}"
-            
-                # The "NOC Terminal" Box
+
+                # The NOC-Style Terminal Box
                 st.markdown(f"""
                     <div style="background-color: rgba(128, 128, 128, 0.05); border: 1px solid {color}; border-left: 8px solid {color}; 
-                    box-shadow: 0px 4px 15px {glow}; padding: 20px; border-radius: 8px; margin-bottom: 5px; margin-top: 25px;">
-                        <span style="color: {color}; font-weight: bold; font-family: monospace; letter-spacing: 1px;">[ MODULE {i+1} ]</span><br><br>
-                        <b>SCENARIO:</b> {q.get('scenario', 'Analyzing local node traffic...')}<br>
-                        <b style="color: {color};">QUESTION:</b> {q.get('question', 'Identify the protocol.')}
+                    box-shadow: 0px 4px 15px {glow}; padding: 20px; border-radius: 10px; margin-top: 25px; margin-bottom: 10px;">
+                        <span style="color: {color}; font-weight: bold; font-family: monospace;">[ MODULE {i+1} ]</span><br><br>
+                        <b>FIELD REPORT:</b><br>{q.get('scenario', 'Analyzing node...')}<br><br>
+                        <b style="color: {color};">PROCTOR'S INQUIRY:</b><br>{q.get('question', 'Identify the anomaly.')}
                     </div>
                 """, unsafe_allow_html=True)
 
-                # Responsive Inputs
                 if st.session_state.current_mode == "MCQ":
-                    st.session_state.user_answers[i] = st.radio("Select Protocol:", q.get('options', []), key=u_key)
+                    st.session_state.user_answers[i] = st.radio("Select Response:", q.get('options', []), key=u_key)
                 elif st.session_state.current_mode == "Identification":
-                    st.session_state.user_answers[i] = st.text_input("Terminal Entry:", key=u_key, placeholder="Enter term...")
+                    st.session_state.user_answers[i] = st.text_input("Technical Entry:", key=u_key, placeholder="Enter protocol name or acronym...")
                 elif st.session_state.current_mode == "Essay":
-                    st.session_state.user_answers[i] = st.text_area("Technical Debrief:", key=u_key, placeholder="Analyze the architecture...")
+                    st.session_state.user_answers[i] = st.text_area("Analysis Report:", key=u_key, placeholder="Detailed engineering breakdown...")
 
-            # 4. SUBMISSION
-            if st.button("EXECUTE BATCH SUBMISSION", type="primary", use_container_width=True):
+            # 4. BATCH SUBMISSION
+            if st.button("EXECUTE BATCH EVALUATION", type="primary", use_container_width=True):
                 st.session_state.quiz_submitted = True
 
-            # 5. RESULTS (Fixed Essay Explanation)
+            # 5. SMART EVALUATION RESULTS
             if st.session_state.quiz_submitted:
                 st.divider()
-                st.subheader("📋 Proctor Evaluation")
                 for i, q in enumerate(st.session_state.quiz_batch):
-                    ans = st.session_state.user_answers.get(i, "")
-                    with st.expander(f"Review Module {i+1} Details", expanded=True):
-                        
+                    user_ans = str(st.session_state.user_answers.get(i, "")).strip()
+
+                    with st.expander(f"Review Module {i+1} Results", expanded=True):
+                         # --- MCQ Smart Check ---
                         if st.session_state.current_mode == "MCQ":
-                            correct_let = str(q.get('correct', 'A')).strip().upper()[0]
-                            if str(ans).startswith(correct_let):
-                                st.success(f"✅ **Validated:** {q.get('explanation', 'Protocol match confirmed.')}")
+                            target = str(q.get('correct_short', q.get('correct_full', 'A'))).upper()
+                            if user_ans.upper().startswith(target[0]):
+                                st.success(f"✅ **Signal Match:** {q.get('explanation')}")
                             else:
-                                st.error(f"❌ **Mismatch:** Expected {correct_let}. {q.get('explanation', '')}")
+                                st.error(f"❌ **Mismatch:** Expected {target}. {q.get('explanation')}")
 
+                        # --- Identification Smart Check (Acronym + Full Name) ---
                         elif st.session_state.current_mode == "Identification":
-                            if str(ans).strip().lower() == str(q.get('correct', '')).strip().lower():
-                                st.success(f"✅ **Recognized:** {q.get('explanation', 'Term validated.')}")
-                            else:
-                                st.error(f"❌ **Unrecognized:** Expected '{q.get('correct', '')}'")
+                            u_clean = user_ans.lower().replace(" ", "")
+                            t_full = str(q.get('correct_full', '')).lower().replace(" ", "")
+                            t_short = str(q.get('correct_short', '')).lower().replace(" ", "")
 
+                            if (u_clean == t_full or u_clean == t_short or (len(u_clean) > 3 and u_clean in t_full)):
+                                st.success(f"✅ **Validated:** {q.get('correct_full')} ({q.get('correct_short')})")
+                                st.write(f"*Analysis: {q.get('explanation')}*")
+                            else:
+                                st.error(f"❌ **Identity Mismatch**")
+                                st.write(f"**Expected:** {q.get('correct_full')} / {q.get('correct_short')}")
+                                st.info(f"**Debrief:** {q.get('explanation')}")
+
+                        # --- Essay Evaluation ---
                         elif st.session_state.current_mode == "Essay":
-                            # CRITICAL FIX: Explicitly pull the explanation here
-                            proctor_key = q.get('explanation', 'No debriefing details provided by AI.')
-                            st.info(f"📝 **Proctor's Evaluation Key:**\n\n{proctor_key}")
-                            st.caption("Self-assess your analysis against the key technical points above.")
+                            st.info("📝 **Professional Evaluation Criteria:**")
+                            st.write(q.get('explanation', 'Criteria not found.'))
