@@ -646,10 +646,11 @@ else:
 
         # 2. Tier Accents (Based on your final_grade logic)
         color = "#4ade80" if final_grade >= 85 else "#60a5fa" if final_grade >= 75 else "#f87171"
+        glow = "rgba(74, 222, 128, 0.15)" if final_grade >= 85 else "rgba(96, 165, 250, 0.15)" if final_grade >= 75 else "rgba(248, 113, 113, 0.15)"
         tier_name = "Network Architect" if final_grade >= 85 else "Network Technician" if final_grade >= 75 else "Junior Analyst"
-
-        st.title("🎯 AI-Powered Practice Lab")
-        st.caption(f"Status: {tier_name} | Logic Mode: Global State")
+        
+        st.title("🛡️ AI-Powered Practice Lab")
+        st.caption(f"Secure Connection: Verified {tier_name} Node")
 
         # 3. Generator Button
         if st.button(f"Generate New {tier_name} Assessment", use_container_width=True):
@@ -661,76 +662,76 @@ else:
                 quiz_prompt = f"""
                 Act as a {tier_name} Proctor. Generate 3 questions of type: {st.session_state.current_mode}.
                 Topic: {primary_weakness}.
-                Return ONLY a JSON list of objects. No intro text. 
-                Example MCQ: [{{"type":"MCQ","scenario":"...","question":"...","options":["A) x","B) y","C) z"],"correct":"A","explanation":"..."}}]
-                Example Identification: [{{"type":"Identification","scenario":"...","question":"...","correct":"Router","explanation":"..."}}]
+                Return ONLY a JSON list.
+                Rules:
+                - MCQ: 'options' must be 3 strings starting with A), B), C). 'correct' is the letter.
+                - Identification: 'correct' is the specific word.
+                - Essay: 'explanation' must contain the key technical concepts for a perfect answer.
                 """
-
                 raw_response = ask_ai(quiz_prompt)
 
                 # --- THE CLEANER: This prevents the "JSON Decode" errors ---
                 try:
                     # Find the first '[' and last ']' to ignore AI's conversational text
-                    start_idx = raw_response.find('[')
-                    end_idx = raw_response.rfind(']') + 1
-                    if start_idx != -1 and end_idx != 0:
-                        clean_json = raw_response[start_idx:end_idx]
-                        st.session_state.quiz_batch = json.loads(clean_json)
-                        st.session_state.user_answers = {}
-                    else:
-                        st.error("AI sent an invalid format. Please click Generate again.")
+                    start = raw_response.find('[')
+                    end = raw_response.rfind(']') + 1
+                    st.session_state.quiz_batch = json.loads(raw_response[start:end])
+                    st.session_state.user_answers = {}
                 except Exception as e:
                     st.error("Failed to parse quiz data. Re-generating might help.")
 
         # 4. Display Questions
         if st.session_state.quiz_batch:
-            st.info(f"**Current Assessment Mode:** {st.session_state.current_mode}")
+            st.markdown(f"<h4 style='color:{color}; text-align:center;'>--- {st.session_state.current_mode.upper()} BATCH ACTIVE ---</h4>", unsafe_allow_html=True)
 
             for i, q in enumerate(st.session_state.quiz_batch):
-                # Unique key combining batch ID and question index
-                u_key = f"quiz_{st.session_state.batch_id}_{i}"
+                u_key = f"lab_{st.session_state.batch_id}_{i}"
+            
+                # The "NOC Terminal" Box
+                st.markdown(f"""
+                    <div style="background-color: rgba(128, 128, 128, 0.05); border: 1px solid {color}; border-left: 8px solid {color}; 
+                    box-shadow: 0px 4px 15px {glow}; padding: 20px; border-radius: 8px; margin-bottom: 5px; margin-top: 25px;">
+                        <span style="color: {color}; font-weight: bold; font-family: monospace; letter-spacing: 1px;">[ MODULE {i+1} ]</span><br><br>
+                        <b>SCENARIO:</b> {q.get('scenario', 'Analyzing local node traffic...')}<br>
+                        <b style="color: {color};">QUESTION:</b> {q.get('question', 'Identify the protocol.')}
+                    </div>
+                """, unsafe_allow_html=True)
 
-                with st.container(border=True):
-                    st.markdown(f"<b style='color:{color};'>[ MODULE {i+1} ]</b>", unsafe_allow_html=True)
-                    st.write(f"**Scenario:** {q.get('scenario', 'N/A')}")
-                    st.write(f"**Question:** {q.get('question', 'N/A')}")
+                # Responsive Inputs
+                if st.session_state.current_mode == "MCQ":
+                    st.session_state.user_answers[i] = st.radio("Select Protocol:", q.get('options', []), key=u_key)
+                elif st.session_state.current_mode == "Identification":
+                    st.session_state.user_answers[i] = st.text_input("Terminal Entry:", key=u_key, placeholder="Enter term...")
+                elif st.session_state.current_mode == "Essay":
+                    st.session_state.user_answers[i] = st.text_area("Technical Debrief:", key=u_key, placeholder="Analyze the architecture...")
 
-                    if st.session_state.current_mode == "MCQ":
-                        # Fallback for options to prevent crash
-                        opts = q.get('options', ["A) Option Missing", "B) Option Missing", "C) Option Missing"])
-                        st.session_state.user_answers[i] = st.radio("Select Protocol:", opts, key=u_key)
-
-                    elif st.session_state.current_mode == "Identification":
-                        st.session_state.user_answers[i] = st.text_input("Terminal Entry:", key=u_key)
-
-                    elif st.session_state.current_mode == "Essay":
-                        st.session_state.user_answers[i] = st.text_area("Technical Analysis:", key=u_key)
-
-            # 5. Submit Button
-            if st.button("SUBMIT ASSESSMENT BATCH", type="primary", use_container_width=True):
+            # 4. SUBMISSION
+            if st.button("EXECUTE BATCH SUBMISSION", type="primary", use_container_width=True):
                 st.session_state.quiz_submitted = True
 
-            # 6. Results Logic
+            # 5. RESULTS (Fixed Essay Explanation)
             if st.session_state.quiz_submitted:
-                st.write("---")
+                st.divider()
+                st.subheader("📋 Proctor Evaluation")
                 for i, q in enumerate(st.session_state.quiz_batch):
                     ans = st.session_state.user_answers.get(i, "")
-                    with st.expander(f"Review Module {i+1}", expanded=True):
+                    with st.expander(f"Review Module {i+1} Details", expanded=True):
+                        
                         if st.session_state.current_mode == "MCQ":
-                            # Compare only the first letter
-                            correct_letter = str(q.get('correct', '')).strip().upper()[0:1]
-                            if str(ans).strip().upper().startswith(correct_letter):
-                                st.success(f"✅ Correct! {q.get('explanation', '')}")
+                            correct_let = str(q.get('correct', 'A')).strip().upper()[0]
+                            if str(ans).startswith(correct_let):
+                                st.success(f"✅ **Validated:** {q.get('explanation', 'Protocol match confirmed.')}")
                             else:
-                                st.error(f"❌ Incorrect. Expected {correct_letter}. {q.get('explanation', '')}")
+                                st.error(f"❌ **Mismatch:** Expected {correct_let}. {q.get('explanation', '')}")
 
                         elif st.session_state.current_mode == "Identification":
-                            u_ans = str(ans).strip().lower()
-                            t_ans = str(q.get('correct', '')).strip().lower()
-                            if u_ans == t_ans:
-                                st.success(f"✅ Correct! {q.get('explanation', '')}")
+                            if str(ans).strip().lower() == str(q.get('correct', '')).strip().lower():
+                                st.success(f"✅ **Recognized:** {q.get('explanation', 'Term validated.')}")
                             else:
-                                st.error(f"❌ Expected: {q.get('correct')}")
+                                st.error(f"❌ **Unrecognized:** Expected '{q.get('correct', '')}'")
 
                         elif st.session_state.current_mode == "Essay":
-                            st.info(f"📝 **Proctor Evaluation Key:**\n\n{q.get('explanation', '')}")
+                            # CRITICAL FIX: Explicitly pull the explanation here
+                            proctor_key = q.get('explanation', 'No debriefing details provided by AI.')
+                            st.info(f"📝 **Proctor's Evaluation Key:**\n\n{proctor_key}")
+                            st.caption("Self-assess your analysis against the key technical points above.")
