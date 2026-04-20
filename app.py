@@ -664,6 +664,9 @@ else:
                 Topic: {primary_weakness}.
                 Return ONLY a JSON list.
                 STRICT REQUIREMENT:
+                - MCQ: 'options' must be 3 strings starting with A), B), C). 'correct' is the letter.
+                - Identification: 'correct' is the specific word.
+                - Essay: 'explanation' must contain the key technical concepts for a perfect answer.
                 Each of the 3 questions MUST have a completely different scenario. 
                 Example: 
                 - Question 1: Corporate Office VPN issue.
