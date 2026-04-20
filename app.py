@@ -637,12 +637,12 @@ else:
                     st.error(f"Logic Error: {e}")
 
     elif st.session_state['page'] == "Practice Quiz":
-        
         # 1. INIT STATE
         if 'quiz_batch' not in st.session_state: st.session_state.quiz_batch = []
         if 'user_answers' not in st.session_state: st.session_state.user_answers = {}
         if 'quiz_submitted' not in st.session_state: st.session_state.quiz_submitted = False
-    
+
+        # 2. TIER ACCENTS
         if final_grade >= 85:
             tier, color, glow = "Network Architect", "#4ade80", "rgba(74, 222, 128, 0.2)"
         elif final_grade >= 75:
@@ -650,34 +650,34 @@ else:
         else:
             tier, color, glow = "Junior Analyst", "#f87171", "rgba(248, 113, 113, 0.2)"
 
-        st.title("🎯 AI-Powered Practice Quiz")
-        st.caption(f"Currently Authenticated as: {tier}")
+        st.title("🎯 AI-Powered Practice Lab")
+        st.caption(f"Status: Authenticated as {tier} | Targeting: {primary_weakness}")
 
-        # 3. The Interactive Button Logic
+        # 3. BATCH GENERATOR
         if st.button(f"Generate New {tier} Challenge", use_container_width=True):
-            st.session_state.quiz_submitted = False
-            with st.spinner("📡 Establishing secure connection to AI Engine..."):
+            st.session_state.quiz_submitted = False  # Reset on new batch
+            with st.spinner("📡 Pulling latest network scenarios..."):
                 quiz_prompt = f"""
-                Act as a {tier} Proctor. Generate exactly 3 different types of questions for a student.
+                Act as a {tier} Proctor. Generate exactly 3 different questions for a student.
                 Weakness: {primary_weakness}.
-                Randomly choose 3 types from: [Multiple Choice, Identification, Short Essay].
-        
-                Return ONLY a JSON list like this:
+                Types: MUST BE 1 Multiple Choice, 1 Identification, and 1 Short Essay.
+
+                Return ONLY a JSON list:
                 [
                   {{"type": "MCQ", "scenario": "...", "question": "...", "options": ["A) ..", "B) ..", "C) .."], "correct": "A", "explanation": "..."}},
                   {{"type": "Identification", "scenario": "...", "question": "...", "correct": "word", "explanation": "..."}},
-                  {{"type": "Essay", "scenario": "...", "question": "...", "explanation": "What to look for in a good answer"}}
+                  {{"type": "Essay", "scenario": "...", "question": "...", "explanation": "Key technical points..."}}
                 ]
                 """
                 response = ask_ai(quiz_prompt)
                 try:
                     clean_json = response.replace("```json", "").replace("```", "").strip()
                     st.session_state.quiz_batch = json.loads(clean_json)
-                    st.session_state.user_answers = {} # Reset answers
+                    st.session_state.user_answers = {} 
                 except:
-                    st.error("AI Sync Error. Please try generating again.") 
+                    st.error("AI Sync Error. Please retry.")
 
-        # --- 4. BATCH DISPLAY ---
+        # 4. DISPLAY QUESTIONS
         if st.session_state.quiz_batch:
             for i, q in enumerate(st.session_state.quiz_batch):
                 st.markdown(f"""
@@ -685,42 +685,42 @@ else:
                         <span style="color:{color}; font-weight:bold; font-family:monospace;">[ MODULE {i+1}: {q['type'].upper()} ]</span>
                     </div>
                 """, unsafe_allow_html=True)
-            
+
                 with st.container(border=True):
                     st.write(f"**Scenario:** {q['scenario']}")
                     st.write(f"**Question:** {q['question']}")
-            
-                    # Dynamic Input based on Question Type
-                    if q['type'] == "MCQ":
-                        st.session_state.user_answers[i] = st.radio(f"Select Answer for Q{i+1}", q['options'], key=f"q_{i}")     
-                    elif q['type'] == "Identification":
-                       st.session_state.user_answers[i] = st.text_input(f"Your Answer for Q{i+1}", key=f"q_{i}", placeholder="Type the technical term...")          
-                    elif q['type'] == "Essay":
-                       st.session_state.user_answers[i] = st.text_area(f"Technical Analysis for Q{i+1}", key=f"q_{i}", placeholder="Explain the logic...")
 
-            # --- 5. BATCH SUBMISSION ---
+                    if q['type'] == "MCQ":
+                        st.session_state.user_answers[i] = st.radio(f"Select Protocol:", q['options'], key=f"q_{i}") 
+                    elif q['type'] == "Identification":
+                        st.session_state.user_answers[i] = st.text_input(f"Terminal Input:", key=f"q_{i}", placeholder="Enter technical term...")
+                    elif q['type'] == "Essay":
+                        st.session_state.user_answers[i] = st.text_area(f"Technical Debrief:", key=f"q_{i}", placeholder="Explain the structural logic...")
+
+            # 5. SUBMISSION LOGIC
             if st.button("SUBMIT ASSESSMENT BATCH", type="primary", use_container_width=True):
                 st.session_state.quiz_submitted = True
-            
+
+            # 6. RESULTS (Conditional on Submission)
             if st.session_state.quiz_submitted:
                 st.write("---")
                 st.subheader("📋 Proctor's Evaluation")
-        
+
                 for i, q in enumerate(st.session_state.quiz_batch):
                     user_val = st.session_state.user_answers.get(i, "")
-            
+
                     with st.expander(f"Review Module {i+1} Details", expanded=True):
                         if q['type'] == "MCQ":
                             # Improved check for A, B, or C
                             is_correct = user_val.strip().startswith(q['correct'])
                             if is_correct: st.success(f"✅ **Validated:** {q['explanation']}")
                             else: st.error(f"❌ **Mismatch:** Expected {q['correct']}. {q['explanation']}")
-                    
+
                         elif q['type'] == "Identification":
                             is_correct = user_val.strip().lower() == q['correct'].lower()
                             if is_correct: st.success(f"✅ **Term Recognized:** {q['explanation']}")
                             else: st.error(f"❌ **Invalid Term:** Expected '{q['correct']}'. {q['explanation']}")
-                    
+
                         elif q['type'] == "Essay":
                             st.info(f"📝 **Proctor's Key Considerations:**\n\n{q['explanation']}")
                             st.caption("Note: Essays are self-evaluated against the proctor's briefing above.")
