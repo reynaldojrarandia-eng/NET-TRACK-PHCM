@@ -643,6 +643,7 @@ else:
         if 'user_answers' not in st.session_state: st.session_state.user_answers = {}
         if 'quiz_submitted' not in st.session_state: st.session_state.quiz_submitted = False
         if 'current_mode' not in st.session_state: st.session_state.current_mode = "MCQ"
+        if 'batch_id' not in st.session_state: st.session_state.batch_id = 0
 
         # 2. TIER ACCENTS
         if final_grade >= 85:
@@ -660,6 +661,7 @@ else:
             # Randomly select ONE type for the entire batch
             st.session_state.current_mode = random.choice(["MCQ", "Identification", "Essay"])
             st.session_state.quiz_submitted = False
+            st.session_state.batch_id += 1
 
             with st.spinner(f"📡 Preparing {st.session_state.current_mode} Modules..."):
                 quiz_prompt = f"""
@@ -686,9 +688,13 @@ else:
                 """
                 response = ask_ai(quiz_prompt)
                 try:
-                    clean_json = response.replace("```json", "").replace("```", "").strip()
-                    st.session_state.quiz_batch = json.loads(clean_json)
-                    st.session_state.user_answers = {} 
+                    json_match = re.search(r'\[.*\]', response, re.DOTALL)
+                    if json_match:
+                        clean_json = json_match.group(0)
+                        st.session_state.quiz_batch = json.loads(clean_json)
+                        st.session_state.user_answers = {} 
+                    else:
+                        raise ValueError("No JSON found") 
                 except:
                     st.error("AI Sync Error. Please retry.")
 
@@ -697,6 +703,8 @@ else:
             st.info(f"**Current Assessment Mode:** {st.session_state.current_mode}")
 
             for i, q in enumerate(st.session_state.quiz_batch):
+
+                unique_key = f"q_{st.session_state.batch_id}_{i}"
                 st.markdown(f"<div style='border-left: 5px solid {color}; padding-left: 15px; margin-top: 20px;'><span style='color:{color}; font-weight:bold;'>[ MODULE {i+1} ]</span></div>", unsafe_allow_html=True)
 
                 with st.container(border=True):
@@ -722,9 +730,11 @@ else:
                     val = st.session_state.user_answers.get(i, "")
                     with st.expander(f"Review Module {i+1}", expanded=True):
                         if st.session_state.current_mode == "MCQ":
-                            is_correct = val.strip().startswith(q['correct'])
-                            if is_correct: st.success(f"✅ **Validated:** {q['explanation']}")
-                            else: st.error(f"❌ **Mismatch:** Expected {q['correct']}. {q['explanation']}")
+                            correct_letter = q['correct'].strip().upper()[0] 
+                            if val.strip().upper().startswith(correct_letter):
+                                st.success(f"✅ **Validated:** {q['explanation']}")
+                            else:
+                                st.error(f"❌ **Mismatch:** Expected {correct_letter}. {q['explanation']}")
 
                         elif st.session_state.current_mode == "Identification":
 
