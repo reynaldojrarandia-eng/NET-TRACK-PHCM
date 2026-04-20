@@ -646,20 +646,20 @@ else:
 
         # 2. TIER ACCENTS
         if final_grade >= 85:
-            tier, color, glow = "Network Architect", "#4ade80", "rgba(74, 222, 128, 0.2)"
+            tier, color = "Network Architect", "#4ade80"
         elif final_grade >= 75:
-            tier, color, glow = "Network Technician", "#60a5fa", "rgba(96, 165, 250, 0.2)"
+            tier, color = "Network Technician", "#60a5fa"
         else:
-            tier, color, glow = "Junior Analyst", "#f87171", "rgba(248, 113, 113, 0.2)"
+            tier, color = "Junior Analyst", "#f87171"
 
         st.title("🎯 AI-Powered Practice Lab")
-        st.caption(f"Status: Authenticated as {tier} | Targeting: {primary_weakness}")
 
         # 3. BATCH GENERATOR
         if st.button(f"Generate New {tier} Challenge", use_container_width=True):
-
-            st.session_state.current_mode = random.choice(["MCQ, Identification, Essay"])
-            st.session_state.quiz_submitted = False  # Reset on new batch
+            import random
+            # Randomly select ONE type for the entire batch
+            st.session_state.current_mode = random.choice(["MCQ", "Identification", "Essay"])
+            st.session_state.quiz_submitted = False
 
             with st.spinner(f"📡 Preparing {st.session_state.current_mode} Modules..."):
                 quiz_prompt = f"""
@@ -706,27 +706,25 @@ else:
                     elif st.session_state.current_mode == "Essay":
                         st.session_state.user_answers[i] = st.text_area(f"Technical Analysis:", key=f"q_{i}")
 
-            # 5. SUBMISSION LOGIC
+            # 5. SUBMISSION
             if st.button("SUBMIT ASSESSMENT BATCH", type="primary", use_container_width=True):
                 st.session_state.quiz_submitted = True
 
-            # 6. RESULTS (Conditional on Submission)
+            # 6. RESULTS
             if st.session_state.quiz_submitted:
                 st.divider()
-
                 for i, q in enumerate(st.session_state.quiz_batch):
                     val = st.session_state.user_answers.get(i, "")
-
-                    with st.expander(f"Review Module {i+1} Details", expanded=True):
+                    with st.expander(f"Review Module {i+1}", expanded=True):
                         if st.session_state.current_mode == "MCQ":
                             is_correct = val.strip().startswith(q['correct'])
                             if is_correct: st.success(f"✅ **Validated:** {q['explanation']}")
                             else: st.error(f"❌ **Mismatch:** Expected {q['correct']}. {q['explanation']}")
-                    
+
                         elif st.session_state.current_mode == "Identification":
                             is_correct = val.strip().lower() == q['correct'].lower()
                             if is_correct: st.success(f"✅ **Recognized:** {q['explanation']}")
                             else: st.error(f"❌ **Mismatch:** Expected '{q['correct']}'. {q['explanation']}")
-                    
+
                         elif st.session_state.current_mode == "Essay":
                             st.info(f"📝 **Evaluation Criteria:**\n\n{q['explanation']}")
