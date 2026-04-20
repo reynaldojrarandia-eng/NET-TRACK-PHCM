@@ -722,7 +722,7 @@ else:
                             else: st.error(f"❌ **Mismatch:** Expected {q['correct']}. {q['explanation']}")
 
                         elif st.session_state.current_mode == "Identification":
-                            is_correct = val.strip().lower() == q['correct'].lower()
+                            is_correct = val.strip().lower() == q['correct'].strip().lower()
                             if is_correct: st.success(f"✅ **Recognized:** {q['explanation']}")
                             else: st.error(f"❌ **Mismatch:** Expected '{q['correct']}'. {q['explanation']}")
 
