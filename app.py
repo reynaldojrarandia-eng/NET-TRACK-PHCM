@@ -642,7 +642,7 @@ else:
         if 'quiz_batch' not in st.session_state: st.session_state.quiz_batch = []
         if 'user_answers' not in st.session_state: st.session_state.user_answers = {}
         if 'quiz_submitted' not in st.session_state: st.session_state.quiz_submitted = False
-        if 'current_mode' not in st.session_state: st.session_State.current_mode = "MCQ"
+        if 'current_mode' not in st.session_state: st.session_state.current_mode = "MCQ"
 
         # 2. TIER ACCENTS
         if final_grade >= 85:
