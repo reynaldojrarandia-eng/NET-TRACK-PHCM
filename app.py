@@ -657,7 +657,7 @@ else:
 
         # 3. BATCH GENERATOR
         if st.button(f"Generate New {tier} Challenge", use_container_width=True):
-            import random
+            import random, re
             # Randomly select ONE type for the entire batch
             st.session_state.current_mode = random.choice(["MCQ", "Identification", "Essay"])
             st.session_state.quiz_submitted = False
