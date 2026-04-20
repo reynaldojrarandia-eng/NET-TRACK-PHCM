@@ -660,46 +660,24 @@ else:
 
             with st.spinner(f"📡 Requesting {st.session_state.current_mode} modules..."):
                 quiz_prompt = f"""
-                Act as a {tier_name} Proctor. Generate 3 questions of type: {st.session_state.current_mode}.
-                Topic: {primary_weakness}.
-                Return ONLY a JSON list.
-                STRICT REQUIREMENT:
-                - MCQ: 'options' must be 3 strings starting with A), B), C). 'correct' is the letter.
-                - Identification: 'correct' is the specific word and it must be just the word, no letters
-                - Essay: 'explanation' must contain the key technical concepts for a perfect answer.
-                Each of the 3 questions MUST have a completely different scenario. 
-                Example: 
-                - Question 1: Corporate Office VPN issue.
-                - Question 2: Data Center switch failure.
-                - Question 3: ISP Routing loops.
-                Do not repeat the same context.
+                Act as a {tier_name} Proctor. Generate exactly 3 questions of type: {st.session_state.current_mode}.
+                Target Weakness: {primary_weakness}.
+                
+                STRICT IDENTIFICATION RULES:
+                - If mode is Identification, the question must ask for a SINGLE specific technical term (e.g., "What protocol is being described?", "Identify the specific hardware component.").
+                - The 'scenario' must provide enough technical clues so there is only ONE logical answer.
+                - The 'correct' field MUST be that specific term only.
 
                 Return ONLY a JSON list:
                 [
                   {{
                     "type": "{st.session_state.current_mode}", 
-                    "scenario": "UNQIUE SCENARIO A", 
-                    "question": "...", 
-                    "options": ["A) ..", "B) ..", "C) .."], 
-                    "correct": "...", 
-                    "explanation": "..."
+                    "scenario": "A network admin notices that even though the physical link is up, packets are being dropped due to a loop in the Layer 2 topology.", 
+                    "question": "Identify the IEEE 802.1D protocol used to prevent this loop.", 
+                    "correct": "Spanning Tree Protocol", 
+                    "explanation": "STP prevents loops by placing redundant paths in a blocking state."
                   }},
-                  {{
-                    "type": "{st.session_state.current_mode}", 
-                    "scenario": "UNIQUE SCENARIO B", 
-                    "question": "...", 
-                    "options": ["A) ..", "B) ..", "C) .."], 
-                    "correct": "...", 
-                    "explanation": "..."
-                  }},
-                  {{
-                    "type": "{st.session_state.current_mode}", 
-                    "scenario": "UNIQUE SCENARIO C", 
-                    "question": "...", 
-                    "options": ["A) ..", "B) ..", "C) .."], 
-                    "correct": "...", 
-                    "explanation": "..."
-                  }}
+                  ... (generate 2 more unique ones)
                 ]
                 """
                 raw_response = ask_ai(quiz_prompt)
