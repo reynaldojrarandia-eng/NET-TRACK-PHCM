@@ -738,7 +738,7 @@ else:
                                 st.write(f"*Analysis: {q['explanation']}*")
                             else: 
                                 st.error(f"❌ **Invalid Input**")
-                                st.write(f"**Your Input:** `{val}`")
+                                st.write(f"**Your Input:** {val}")
                                 st.write(f"**System Expected:** `{q['correct']}`")
                                 st.info(f"**Proctor's Debrief:** {q['explanation']}")
 
