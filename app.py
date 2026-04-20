@@ -666,6 +666,11 @@ else:
                 Act as a {tier} Proctor. Generate exactly 3 questions of type: {st.session_state.current_mode}.
                 Target Weakness: {primary_weakness}.
 
+                STRICT RULES:
+                1. If MCQ: 'correct' must be A, B, or C. Provide 'options' list.
+                2. If Identification: 'correct' MUST be the actual technical word (e.g. "Router", "BGP", "Latency"). DO NOT provide letters. DO NOT provide options.
+                3. If Essay: 'correct' should be "N/A".
+
                 Return ONLY a JSON list:
                 [
                   {{
@@ -722,9 +727,20 @@ else:
                             else: st.error(f"❌ **Mismatch:** Expected {q['correct']}. {q['explanation']}")
 
                         elif st.session_state.current_mode == "Identification":
-                            is_correct = val.strip().lower() == q['correct'].strip().lower()
-                            if is_correct: st.success(f"✅ **Recognized:** {q['explanation']}")
-                            else: st.error(f"❌ **Mismatch:** Expected '{q['correct']}'. {q['explanation']}")
+
+                            clean_user = val.strip().lower().replace('"',"").replace(".","")
+                            clean_target = q['correct'].strip().lower().replace('"',"").replace(".","")
+
+                            is_correct = clean_user == clean_target
+
+                            if is_correct: 
+                                st.success(f"✅ **Recognized:** {q['explanation']}")
+                                st.write(f"*Analysis: {q['explanation']}*")
+                            else: 
+                                st.error(f"❌ **Invalid Input**")
+                                st.write(f"**Your Input:** `{val}`")
+                                st.write(f"**System Expected:** `{q['correct']}`")
+                                st.info(f"**Proctor's Debrief:** {q['explanation']}")
 
                         elif st.session_state.current_mode == "Essay":
                             st.info(f"📝 **Evaluation Criteria:**\n\n{q['explanation']}")
