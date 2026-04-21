@@ -123,32 +123,42 @@ def render_teacher_dashboard(supabase):
         )
         
         if st.button("Save Changes to Database 🔄", type="primary", use_container_width=True):
-            for _, row in updated_df.iterrows():
-                updates = []
-                final_db_grade = (row['participation_score']*0.2) + \
-                                 (row['assignment_score']*0.2) + \
-                                 (row['quiz_score']*0.2) + \
-                                 (row['exam_score']*0.4)
-                updates.append({
-                        "student_id": row['student_id'],
-                        "absent_count": row['absent_count'],
-                        "participation_score": row['participation_score'],
-                        "assignment_score": row['assignment_score'],
-                        "quiz_score": row['quiz_score'],
-                        "exam_score": row['exam_score'],
-                        "total_weighted_grade": final_db_grade
-                    })
+            if updated_df is not None:
+                with st.spinner("🚀 Synchronizing with Supabase..."):
+                    updates = []
+                    
+                    for index, row in updated_df.iterrows():
+                        p_score = float(row['participation_score'])
+                        a_score = float(row['assignment_score'])
+                        q_score = float(row['quiz_score'])
+                        e_score = float(row['exam_score'])
+                        
+                        calc_grade = (p_score * 0.2) + (a_score * 0.2) + (q_score * 0.2) + (e_score * 0.4)
+                        
+                        updates.append({
+                            "student_id": str(row['student_id']),
+                            "absent_count": int(row['absent_count']),
+                            "participation_score": p_score,
+                            "assignment_score": a_score,
+                            "quiz_score": q_score,
+                            "exam_score": e_score,
+                            "total_weighted_grade": round(calc_grade, 2)
+                        })
 
-                try:
-                    supabase.table("student_analytics").upsert(updates, on_conflict="student_id").execute()
-                    st.cache_data.clear()
-                    st.cache_resource.clear()
-                    st.session_state['last_sync'] = time.strftime("%H:%M:%S")
-                    st.success(f"✅ Successfully synced {len(updates)} records!")
-                    time.sleep(1)
-                    st.rerun()
-                except Exception as e:
-                    st.error(f"Sync failed: {str(e)}")
+                    try:
+                        result = supabase.table("student_analytics").upsert(updates, on_conflict="student_id").execute()
+                        
+                        if result.data:
+                            st.cache_data.clear() 
+                            st.success(f"✅ Database Updated! {len(result.data)} rows modified.")
+                            time.sleep(1)
+                            st.rerun() 
+                        else:
+                            st.error("⚠️ Supabase accepted the request but no data was changed.")
+                    except Exception as e:
+                        st.error(f"❌ Sync failed: {str(e)}")
+            else:
+                st.warning("No changes detected in the editor.")
 
         st.divider()
         st.subheader("📄 Export Report")
