@@ -141,7 +141,9 @@ def render_teacher_dashboard(supabase):
 
                 try:
                     supabase.table("student_analytics").upsert(updates, on_conflict="student_id").execute()
-                    
+                    st.cache_data.clear()
+                    st.cache_resource.clear()
+                    st.session_state['last_sync'] = time.strftime("%H:%M:%S")
                     st.success(f"✅ Successfully synced {len(updates)} records!")
                     time.sleep(1)
                     st.rerun()
