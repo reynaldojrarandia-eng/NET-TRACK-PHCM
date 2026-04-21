@@ -1,7 +1,7 @@
 import streamlit as st
 from utils.db import get_supabase
 from utils.style import apply_custom_design
-from modules import auth, teacher_dashboard, teacher_metrics, student_dashboard, quiz_engine
+from modules import auth, teacher, aimetrics, student, quiz_engine
 
 # --- 1. CONFIG & CONNECTION ---
 st.set_page_config(page_title="NET-TRACK Pro | PHCM", page_icon="🌐", layout="wide")
