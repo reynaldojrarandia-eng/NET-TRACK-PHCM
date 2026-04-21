@@ -2,7 +2,6 @@ import streamlit as st
 from utils.ai_handler import ask_ai
 
 def render_student_dashboard(supabase):
-    st.cache_data.clear()
     cloud_res = supabase.table("student_analytics").select("*").eq("student_id", st.session_state['username']).execute()
 
     if cloud_res.data:
