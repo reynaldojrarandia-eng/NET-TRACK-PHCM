@@ -124,14 +124,29 @@ def render_teacher_dashboard(supabase):
         
         if st.button("Save Changes to Database 🔄", type="primary", use_container_width=True):
             for _, row in updated_df.iterrows():
-                final_db_grade = (row['participation_score']*0.2) + (row['assignment_score']*0.2) + (row['quiz_score']*0.2) + (row['exam_score']*0.4)
-                supabase.table("student_analytics").update({
-                    "absent_count": row['absent_count'], "participation_score": row['participation_score'],
-                    "assignment_score": row['assignment_score'], "quiz_score": row['quiz_score'],
-                    "exam_score": row['exam_score'], "total_weighted_grade": final_db_grade
-                }).eq("student_id", row['student_id']).execute()
-            st.success("Succesfully updated Database!")
-            st.rerun()
+                updates = []
+                final_db_grade = (row['participation_score']*0.2) + \
+                                 (row['assignment_score']*0.2) + \
+                                 (row['quiz_score']*0.2) + \
+                                 (row['exam_score']*0.4)
+                updates.append({
+                        "student_id": row['student_id'],
+                        "absent_count": row['absent_count'],
+                        "participation_score": row['participation_score'],
+                        "assignment_score": row['assignment_score'],
+                        "quiz_score": row['quiz_score'],
+                        "exam_score": row['exam_score'],
+                        "total_weighted_grade": final_db_grade
+                    })
+
+                try:
+                    supabase.table("student_analytics").upsert(updates, on_conflict="student_id").execute()
+                    
+                    st.success(f"✅ Successfully synced {len(updates)} records!")
+                    time.sleep(1)
+                    st.rerun()
+                except Exception as e:
+                    st.error(f"Sync failed: {str(e)}")
 
         st.divider()
         st.subheader("📄 Export Report")
