@@ -63,12 +63,12 @@ else:
     # --- 5. ROUTING LOGIC ---
     if st.session_state['user_role'] == "Teacher":
         if st.session_state['page'] == "Teacher Dashboard":
-            teacher_dashboard.render_teacher_dashboard(supabase)
+            teacher.render_teacher_dashboard(supabase)
         elif st.session_state['page'] == "AI Model Metrics":
-            teacher_metrics.render_teacher_metrics(supabase)
+            aimetrics.render_teacher_metrics(supabase)
     else:
         if st.session_state['page'] == "Dashboard":
-            student_dashboard.render_student_dashboard(supabase)
+            student.render_student_dashboard(supabase)
         elif st.session_state['page'] == "Practice Quiz":
             # Pass the values that were either calculated above or inside the student dashboard
             fg = st.session_state.get('final_grade', final_grade)
