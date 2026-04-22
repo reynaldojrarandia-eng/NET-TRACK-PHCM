@@ -24,13 +24,14 @@ def render_practice_quiz(final_grade, primary_weakness):
         
         with st.spinner(f"🧠 Synthesizing {st.session_state.current_mode} scenarios..."):
             quiz_prompt = f"""
-            Act as a Senior Network Proctor. Generate 3 UNIQUE modules of type: {st.session_state.current_mode}.
+            Act as a Senior Network Proctor. Generate 10 UNIQUE modules of type: {st.session_state.current_mode}.
             Topic Focus: {primary_weakness}.
             STRICT QUALITY REQUIREMENTS:
+            - For Essay make it only 3 Modules
             - SCENARIO: Must be a complex 'Field Report'. Include symptoms, error codes, or specific architecture constraints.
             - QUESTION: Do not ask for definitions. Ask for 'Diagnostic Identification' or 'Architectural Decisions'.
             - IDENTIFICATION: Provide both 'correct_full' (Formal name) and 'correct_short' (Acronym).
-            - DIVERSITY: Ensure each of the 3 questions uses a different context (e.g., Security, Cloud, Hardware).
+            - DIVERSITY: Ensure each of the 10 questions uses a different context (e.g., Security, Cloud, Hardware).
             Return ONLY a JSON list:
             [{{
                 "scenario": "...", "question": "...", "options": ["A) ...", "B) ...", "C) ..."],
