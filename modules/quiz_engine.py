@@ -31,7 +31,7 @@ def render_practice_quiz(final_grade, primary_weakness):
             - QUESTION: Do not ask for definitions. Ask for 'Diagnostic Identification' or 'Architectural Decisions'.
             - IDENTIFICATION: Provide both 'correct_full' (Formal name) and 'correct_short' (Acronym).
             - DIVERSITY: Ensure each of the 10 questions uses a different context (e.g., Security, Cloud, Hardware).
-            ADDITONALLY: FOR ESSAYS MAKE IT ONLY 3 MODULES!
+            - ADDITONALLY: FOR ESSAYS MAKE IT ONLY 3 MODULES, BUT FOR MCQ AND IDENTIFICATION MAKE IT 10 MODULES!!
             Return ONLY a JSON list:
             [{{
                 "scenario": "...", "question": "...", "options": ["A) ...", "B) ...", "C) ..."],
