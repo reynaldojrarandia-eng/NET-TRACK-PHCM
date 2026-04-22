@@ -1,5 +1,6 @@
 import streamlit as st
 from utils.ai_handler import ask_ai
+import time
 
 def render_student_dashboard(supabase):
     st.cache_data.clear()
@@ -41,44 +42,54 @@ def render_student_dashboard(supabase):
 
             if grade >= 85:
                 tier, persona, color = "Network Architect", "Lead Engineer", "#00FF41"
-                complexity = "Critical Infrastructure & Advanced Security Design"
+                focus = "Critical Infrastructure & Advanced Security Design"
             elif grade >= 75:
                 tier, persona, color = "Network Technician", "Senior Field Tech", "#00BFFF"
-                complexity = "Active Configuration & VLAN Implementation"
+                focus = "Active Configuration & VLAN Implementation"
             else:
                 tier, persona, color = "Junior Analyst", "Support Mentor", "#FF4B4B"
-                complexity = "Foundational OSI Logic & Connectivity Troubleshooting"
+                focus = "Foundational OSI Logic & Connectivity Troubleshooting"
                 
             coach_prompt = f"""
             Role: {persona} ({tier}).
-            Context: Student has a grade of {grade}% and struggles with {primary_weakness}.
-            Task: Provide a 3-part interactive challenge.
+            Objective: Act as a Career Mentor for a student with a {final_grade}% grade.
+            Technical Focus: {primary_weakness}.
+            
+            Please provide the following:
+            1. 🔍 **DIAGNOSIS**: Why is {primary_weakness} vital in a {focus} role?
+            2. 🛠️ **CHALLENGE**: Give one complex "What If" scenario involving {primary_weakness}.
+            3. 📈 **RECOVERY PLAN**: Provide 2 specific study actions to turn this weakness into a strength.
+            4. 💡 **COMMAND**: Share one professional Cisco/Linux command related to this.
 
-            Format:
-            - 🚨 **SITUATION**: Describe a professional scenario about {primary_weakness}.
-            - 🛠️ **CHALLENGE**: Ask a {complexity} question based on the situation.
-            - 💡 **PRO-TIP**: Give one industry-standard command or best practice.
-
-            Tone: Professional and encouraging. Use technical terminology.
+            Tone: Professional, high-stakes, and encouraging.
             """
             
-            try:
-                ai_response = ask_ai(coach_prompt)
-                if ai_response:
-                    st.markdown(f"""
-                    <div style="background-color: #0e1117; border: 2px solid {color}; border-radius: 10px; padding: 20px; font-family: 'Courier New', Courier, monospace;">
-                        <div style="color: {color}; font-weight: bold; margin-bottom: 10px; border-bottom: 1px solid {color}; padding-bottom: 5px;">
-                        📡 {tier.upper()} INTERFACE | GRADE: {grade}%
-                        </div>
-                        <div style="color: #fafafa; line-height: 1.6;">
-                        {ai_response.replace('\n', '<br>')}
-                        </div>
-                    </div>
-                    """, unsafe_allow_html=True)
-
-                    with st.expander("🔑 Access Solution Strategy"):
-                        st.write(f"Analyzing {primary_weakness}... To solve this as a {tier}, focus on the data link and network layer interactions. Ensure your subnet masks and gateway configurations align with the topology.")
-                else:
-                    st.warning("Awaiting signal from the AI Coach...")
-            except Exception as e:
-                st.error(f"Logic Error: {e}")
+            if st.button("Consult AI Mentor", use_container_width=True):
+                with st.spinner("Analyzing your technical trajectory..."):
+                    try:
+                        ai_response = ask_ai(coach_prompt)
+                        if ai_response:
+                            # Terminal Style Box
+                            st.markdown(f"""
+                            <div style="background-color: #0d1117; border: 1.5px solid {color}; border-radius: 8px; padding: 25px; box-shadow: 0px 4px 15px rgba(0,0,0,0.5);">
+                                <div style="color: {color}; font-family: 'Courier New'; font-weight: bold; font-size: 1.1em; border-bottom: 1px solid {color}; padding-bottom: 10px; margin-bottom: 15px;">
+                                    > SYSTEM_ACCESS: {tier.upper()} INTERFACE <br>
+                                    > FOCUS_AREA: {primary_weakness.upper()}
+                                </div>
+                                <div style="color: #e6edf3; line-height: 1.8; font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;">
+                                    {ai_response.replace('\n', '<br>')}
+                                </div>
+                                <div style="margin-top: 20px; font-size: 0.8em; color: {color}; opacity: 0.7; font-family: 'Courier New';">
+                                    -- END OF TRANSMISSION --
+                                </div>
+                            </div>
+                            """, unsafe_allow_html=True)
+                            
+                            with st.expander("🔑 View Mentor's Study Hint"):
+                                st.write(f"To master {primary_weakness}, try simulating a network failure in Cisco Packet Tracer specifically targeting the {focus} phase. Research 'Industry Best Practices' for this topic.")
+                        else:
+                            st.warning("Connection to the Mentor node timed out.")
+                    except Exception as e:
+                        st.error(f"Mentor Logic Error: {e}")
+    else:
+        st.info("No analytics data found. Please complete your first assessment to activate the AI Coach.")
