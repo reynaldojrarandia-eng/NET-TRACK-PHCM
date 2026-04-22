@@ -21,10 +21,10 @@ def render_practice_quiz(final_grade, primary_weakness):
         st.session_state.current_mode = random.choice(["MCQ", "Identification", "Essay"])
         st.session_state.quiz_submitted = False
         st.session_state.batch_id = random.randint(1000, 9999)
-        
+        item_count = 3 if st.session_state.current_mode == "Essay" else 10
         with st.spinner(f"🧠 Synthesizing {st.session_state.current_mode} scenarios..."):
             quiz_prompt = f"""
-            Act as a Senior Network Proctor. Generate 10 UNIQUE modules (but for essay mode make it only 3 Modules) of type: {st.session_state.current_mode}.
+            Act as a Senior Network Proctor. Generate exactly {item_count} UNIQUE modules of type: {st.session_state.current_mode}.
             Topic Focus: {primary_weakness}.
             STRICT QUALITY REQUIREMENTS:
             - SCENARIO: Must be a complex 'Field Report'. Include symptoms, error codes, or specific architecture constraints.
@@ -32,7 +32,7 @@ def render_practice_quiz(final_grade, primary_weakness):
             - IDENTIFICATION: Provide both 'correct_full' (Formal name) and 'correct_short' (Acronym).
             - DIVERSITY: Ensure each of the 10 questions (but for essay mode make it only 3 questions) uses a different context (e.g., Security, Cloud, Hardware).
             - ESSAY: For this mode Ensure it only has 3 Modules/Questions! (e.g., Module 1, Module 2, Module 3)
-            - ADDITONALLY: FOR ESSAY MODE MAKE IT ONLY 3 MODULES, BUT FOR MCQ AND IDENTIFICATION MAKE IT 10 MODULES!!
+            - JSON STRUCTURE: Return ONLY a JSON list of {item_count} objects.
             Return ONLY a JSON list:
             [{{
                 "scenario": "...", "question": "...", "options": ["A) ...", "B) ...", "C) ..."],
