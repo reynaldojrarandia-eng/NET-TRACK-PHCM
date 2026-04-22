@@ -1,10 +1,10 @@
 import streamlit as st
 from utils.db import get_supabase
-from utils.style import apply_custom_design
+from utils.style import apply_custom_design, render_header
 from modules import auth, teacher, aimetrics, student, quiz_engine
 
 # --- 1. CONFIG & CONNECTION ---
-st.set_page_config(page_title="NET-TRACK Pro | PHCM", page_icon="🌐", layout="wide")
+st.set_page_config(page_title="PERPY: CORE | PHCM", page_icon="🎓", layout="wide")
 supabase = get_supabase()
 apply_custom_design()
 
@@ -26,8 +26,9 @@ if not st.session_state['logged_in']:
 else:
     # --- 4. MAIN SYSTEM VIEW ---
     with st.sidebar:
-        st.markdown('<h2 style="color:#4ade80;">NET-TRACK</h2>', unsafe_allow_html=True)
-        st.write(f"User: **{st.session_state['username']}** | {st.session_state['user_role']}")
+        st.markdown('<h1 style="color:#58a6ff; font-size: 1.5rem;">PERPY: CORE</h1>', unsafe_allow_html=True)
+        st.write(f"Logged as: **{st.session_state['username']}**")
+        st.caption(f"Role: {st.session_state['user_role']}")
         st.divider()
 
         if st.session_state['user_role'] == "Teacher":
@@ -35,9 +36,14 @@ else:
         else:
             nav = ["Dashboard", "Practice Quiz"]
             
-        page = st.radio("NAVIGATE", nav, key="nav_radio")
+        page = st.radio("NAVIGATION", nav, key="nav_radio")
         st.session_state['page'] = page
         
+        st.write("") 
+        if st.button("Log Out", use_container_width=True):
+            st.session_state.clear()
+            st.rerun()
+
         # Original global fetch block for students
         final_grade = 0
         primary_weakness = "General Networking"
@@ -55,22 +61,21 @@ else:
                     primary_weakness = min(scores, key=scores.get)
             except Exception:
                 st.sidebar.warning("⚠️ Syncing limited on public link.")
-                
-        if st.button("Log Out"):
-            st.session_state.clear()
-            st.rerun()
 
     # --- 5. ROUTING LOGIC ---
     if st.session_state['user_role'] == "Teacher":
-        if st.session_state['page'] == "Teacher Dashboard":
+        render_header("Teacher Console", "Academic Performance & Data Management")
+        
+        if st.session_state['page'] == "Teacher Analytics":
             teacher.render_teacher_dashboard(supabase)
         elif st.session_state['page'] == "AI Model Metrics":
             aimetrics.render_teacher_metrics(supabase)
     else:
-        if st.session_state['page'] == "Dashboard":
+        render_header("Student Portal", "Adaptive Learning & Growth Analysis")
+        
+        if st.session_state['page'] == "Performance Dashboard":
             student.render_student_dashboard(supabase)
-        elif st.session_state['page'] == "Practice Quiz":
-            # Pass the values that were either calculated above or inside the student dashboard
-            fg = st.session_state.get('final_grade', final_grade)
-            pw = st.session_state.get('current_weakness', primary_weakness)
+        elif st.session_state['page'] == "Diagnostic Lab":
+            fg = st.session_state.get('final_grade', 0)
+            pw = st.session_state.get('current_weakness', "Core Concepts")
             quiz_engine.render_practice_quiz(fg, pw)

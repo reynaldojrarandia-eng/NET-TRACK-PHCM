@@ -1,49 +1,58 @@
 import streamlit as st
 
 def apply_custom_design():
-    # This CSS uses variables that change based on Streamlit's Light/Dark setting
-    design_css = """
+    st.markdown("""
     <style>
-        /* 1. Global App Background */
+        /* 1. Base Theme Overrides */
         .stApp {
-            background: var(--background-color);
-            color: var(--text-color);
+            background-color: #0b0e14;
+            color: #e6edf3;
         }
 
-        /* 2. Glass-morphism Cards */
-        /* Works on both modes by using semi-transparent neutral tones */
-        div[data-testid="stMetricValue"], .stImage, .css-1r698wo {
-            background-color: rgba(150, 150, 150, 0.1) !important;
-            backdrop-filter: blur(12px) !important;
-            -webkit-backdrop-filter: blur(12px) !important;
-            border: 1px solid rgba(150, 150, 150, 0.2) !important;
-            border-radius: 15px !important;
-            padding: 20px !important;
-            box-shadow: 0 4px 30px rgba(0, 0, 0, 0.1) !important;
+        /* 2. Unified Card Design (Metrics & Containers) */
+        div[data-testid="stMetric"], .stChatMessage, div[data-testid="stExpander"] {
+            background-color: #161b22 !important;
+            border: 1px solid #30363d !important;
+            border-radius: 10px !important;
+            padding: 15px !important;
         }
 
-        /* 3. The Main Title Gradient */
-        .main-header {
-            background: linear-gradient(90deg, #11998e, #38ef7d);
+        /* 3. High-Contrast Headers */
+        .main-title {
+            font-size: 2.5rem;
+            font-weight: 800;
+            letter-spacing: -1px;
+            background: linear-gradient(90deg, #58a6ff, #bc8cff);
             -webkit-background-clip: text;
             -webkit-text-fill-color: transparent;
-            font-weight: 800;
-            font-size: 2.5rem;
-            text-align: center;
-            margin-bottom: 20px;
+            margin-bottom: 0.5rem;
         }
 
-        /* 4. Adaptive Input Fields */
-        /* Softens the bright white inputs in Dark Mode */
-        div[data-baseweb="input"] {
-            background-color: rgba(150, 150, 150, 0.05) !important;
-            border-radius: 8px !important;
+        /* 4. Sleek Buttons */
+        div.stButton > button {
+            background-color: #238636; /* Success Green */
+            color: white;
+            border: none;
+            border-radius: 6px;
+            padding: 0.5rem 1rem;
+            font-weight: 600;
+            width: 100%;
         }
 
-        /* 5. Custom Sidebar Polish */
-        section[data-testid="stSidebar"] {
-            border-right: 1px solid rgba(150, 150, 150, 0.1);
+        div.stButton > button:hover {
+            background-color: #2ea043;
+            border: none;
+            color: white;
+        }
+
+        /* 5. Custom Sidebar */
+        [data-testid="stSidebar"] {
+            background-color: #0d1117 !important;
+            border-right: 1px solid #30363d;
         }
     </style>
-    """
-    st.markdown(design_css, unsafe_allow_html=True)
+    """, unsafe_allow_html=True)
+
+def render_header(title="PERPY: CORE", subtitle="Multi-Subject Adaptive Intelligence"):
+    st.markdown(f'<h1 class="main-title">{title}</h1>', unsafe_allow_html=True)
+    st.markdown(f'<p style="color: #8b949e; font-size: 1.1rem; margin-bottom: 2rem;">{subtitle}</p>', unsafe_allow_html=True)
