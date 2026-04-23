@@ -3,21 +3,27 @@ import streamlit as st
 def apply_custom_design():
     st.markdown("""
     <style>
-        /* Use Streamlit Variables to support Light/Dark mode */
+        /* 1. Base Adaptive Theme */
         .stApp {
             background-color: var(--background-color);
             color: var(--text-color);
         }
 
-        /* Metric Cards & Expanders */
-        div[data-testid="stMetric"], .stChatMessage, div[data-testid="stExpander"] {
+        /* 2. FIXED: Uniform Metric Card Sizes */
+        div[data-testid="stMetric"] {
             background-color: rgba(151, 166, 195, 0.1) !important;
             border: 1px solid rgba(151, 166, 195, 0.2) !important;
             border-radius: 10px !important;
-            backdrop-filter: blur(10px);
+            padding: 15px !important;
+            
+            /* The Fix: Force equal height and spacing */
+            min-height: 130px !important; 
+            display: flex !important;
+            flex-direction: column !important;
+            justify-content: center !important;
         }
 
-        /* Title Gradient (Works on both modes) */
+        /* 3. Header Styling */
         .main-title {
             font-size: 2.5rem;
             font-weight: 800;
@@ -26,15 +32,10 @@ def apply_custom_design():
             -webkit-text-fill-color: transparent;
         }
 
-        /* Fix Tabs to look like your reference image */
+        /* 4. Tab Styling for Horizontal Nav */
         button[data-baseweb="tab"] {
-            font-size: 18px !important;
+            font-size: 16px !important;
             font-weight: 600 !important;
-            padding: 10px 20px !important;
         }
     </style>
     """, unsafe_allow_html=True)
-
-def render_header(title="PERPY: CORE", subtitle="Multi-Subject Adaptive Intelligence"):
-    st.markdown(f'<h1 class="main-title">{title}</h1>', unsafe_allow_html=True)
-    st.markdown(f'<p style="color: gray; opacity: 0.8;">{subtitle}</p>', unsafe_allow_html=True)
