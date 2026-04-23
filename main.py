@@ -20,74 +20,65 @@ if 'logged_in' not in st.session_state:
         'username': None,
         'last_sync': "Never",
         'forgot_mode': False,
-        'page': "Dashboard",
-        'current_weakness': "General Networking"
+        'current_weakness': "General Theory"
     })
 
 # --- 3. AUTHENTICATION FLOW ---
 if not st.session_state['logged_in']:
     auth.render_auth(supabase)
 else:
-    # --- 4. MAIN SYSTEM VIEW ---
+    # --- 4. SIDEBAR (User Profile & Admin Only) ---
     with st.sidebar:
-        st.markdown('<h1 style="color:#58a6ff; font-size: 1.5rem;">PERPY: CORE</h1>', unsafe_allow_html=True)
-        st.write(f"Logged as: **{st.session_state['username']}**")
-        st.caption(f"Role: {st.session_state['user_role']}")
+        st.markdown(f"### Welcome, {st.session_state['username']}")
+        st.caption(f"Access Level: {st.session_state['user_role']}")
         st.divider()
-
-        # Define Navigation Labels
-        if st.session_state['user_role'] == "Teacher":
-            nav = ["Teacher Dashboard", "AI Model Metrics"]
-        else:
-            nav = ["Dashboard", "Practice Quiz"]
-            
-        page = st.radio("NAVIGATION", nav, key="nav_radio")
-        st.session_state['page'] = page
         
-        st.write("") 
-        if st.button("Log Out", use_container_width=True):
-            st.session_state.clear()
-            st.rerun()
-
-        # Data Pre-fetch for Student Context
+        # Student Data Background Fetch (Invisible logic)
         final_grade = 0
-        primary_weakness = "General Networking"
-        if st.session_state.get('user_role') == "Student" and st.session_state.get('username'):
+        primary_weakness = "General Theory"
+        if st.session_state['user_role'] == "Student":
             try:
                 res = supabase.table("student_analytics").select("*").eq("student_id", st.session_state['username']).execute()
                 if res.data:
                     r = res.data[0]
-                    raw_p = r.get('participation_score', 0)
-                    a_score = r.get('assignment_score', 0)
-                    q_score = r.get('quiz_score', 0)
-                    e_score = r.get('exam_score', 0)
-                    final_grade = (raw_p * 0.2) + (a_score * 0.2) + (q_score * 0.2) + (e_score * 0.4)
+                    raw_p, a_score = r.get('participation_score', 0), r.get('assignment_score', 0)
+                    q_score, e_score = r.get('quiz_score', 0), r.get('exam_score', 0)
                     
-                    # Store in session state for cross-module access
+                    final_grade = (raw_p * 0.2) + (a_score * 0.2) + (q_score * 0.2) + (e_score * 0.4)
                     st.session_state['final_grade'] = final_grade
+                    
                     scores = {"Participation": raw_p, "Assignments": a_score, "Quizzes": q_score, "Exam": e_score}
                     primary_weakness = min(scores, key=scores.get)
                     st.session_state['current_weakness'] = primary_weakness
             except Exception:
-                st.sidebar.warning("⚠️ Syncing limited.")
+                pass
 
-    # --- 5. ROUTING LOGIC (FIXED NAMES) ---
+        if st.button("Log Out", use_container_width=True):
+            st.session_state.clear()
+            st.rerun()
+
+    # --- 5. MAIN INTERFACE & ROUTING ---
     if st.session_state['user_role'] == "Teacher":
         render_header("Teacher Console", "Academic Performance & Data Management")
         
-        # Matches nav labels exactly
-        if st.session_state['page'] == "Teacher Dashboard":
+        # Horizontal Tabs for Teachers
+        t1, t2 = st.tabs(["📊 Teacher Dashboard", "🧠 AI Model Metrics"])
+        
+        with t1:
             teacher.render_teacher_dashboard(supabase)
-        elif st.session_state['page'] == "AI Model Metrics":
+        with t2:
             aimetrics.render_teacher_metrics(supabase)
+            
     else:
         render_header("Student Portal", "Adaptive Learning & Growth Analysis")
         
-        # Matches nav labels exactly
-        if st.session_state['page'] == "Dashboard":
+        # Horizontal Tabs for Students
+        t1, t2 = st.tabs(["🏠 Dashboard", "📝 Practice Quiz"])
+        
+        with t1:
             student.render_student_dashboard(supabase)
-        elif st.session_state['page'] == "Practice Quiz":
-            # Using current calculated values
-            fg = st.session_state.get('final_grade', final_grade)
-            pw = st.session_state.get('current_weakness', primary_weakness)
+        with t2:
+            # Grabbing fresh data from session state
+            fg = st.session_state.get('final_grade', 0)
+            pw = st.session_state.get('current_weakness', "Core Concepts")
             quiz_engine.render_practice_quiz(fg, pw)
