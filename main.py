@@ -1,7 +1,12 @@
 import streamlit as st
 from utils.db import get_supabase
 from utils.style import apply_custom_design, render_header
-from modules import auth, teacher, aimetrics, student, quiz_engine
+from modules import auth 
+import modules.teacher as teacher      
+import modules.aimetrics as aimetrics    
+import modules.student as student    
+import modules.quiz_engine as quiz_engine
+
 
 # --- 1. CONFIG & CONNECTION ---
 st.set_page_config(page_title="PERPY: CORE | PHCM", page_icon="🎓", layout="wide")
