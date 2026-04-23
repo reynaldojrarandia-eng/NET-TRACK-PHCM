@@ -1,6 +1,6 @@
 import streamlit as st
 from utils.db import get_supabase
-from utils.style import apply_custom_design, render_header
+from utils.style import apply_custom_design
 from modules import auth 
 import modules.teacher as teacher      
 import modules.aimetrics as aimetrics    
