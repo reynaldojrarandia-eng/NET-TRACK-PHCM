@@ -67,14 +67,14 @@ else:
         render_header("Teacher Console", "Academic Performance & Data Management")
         
         if st.session_state['page'] == "Teacher Analytics":
-            teacher.render_teacher(supabase)
+            teacher.render_teacher_dashboard(supabase)
         elif st.session_state['page'] == "AI Model Metrics":
-            aimetrics.render_teacher(supabase)
+            aimetrics.render_teacher_metrics(supabase)
     else:
         render_header("Student Portal", "Adaptive Learning & Growth Analysis")
         
         if st.session_state['page'] == "Performance Dashboard":
-            student.render_student(supabase)
+            student.render_student_dashboard(supabase)
         elif st.session_state['page'] == "Diagnostic Lab":
             fg = st.session_state.get('final_grade', 0)
             pw = st.session_state.get('current_weakness', "Core Concepts")
