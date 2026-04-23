@@ -7,7 +7,6 @@ import modules.aimetrics as aimetrics
 import modules.student as student    
 import modules.quiz_engine as quiz_engine
 
-
 # --- 1. CONFIG & CONNECTION ---
 st.set_page_config(page_title="PERPY: CORE | PHCM", page_icon="🎓", layout="wide")
 supabase = get_supabase()
@@ -36,6 +35,7 @@ else:
         st.caption(f"Role: {st.session_state['user_role']}")
         st.divider()
 
+        # Define Navigation Labels
         if st.session_state['user_role'] == "Teacher":
             nav = ["Teacher Dashboard", "AI Model Metrics"]
         else:
@@ -49,7 +49,7 @@ else:
             st.session_state.clear()
             st.rerun()
 
-        # Original global fetch block for students
+        # Data Pre-fetch for Student Context
         final_grade = 0
         primary_weakness = "General Networking"
         if st.session_state.get('user_role') == "Student" and st.session_state.get('username'):
@@ -62,25 +62,32 @@ else:
                     q_score = r.get('quiz_score', 0)
                     e_score = r.get('exam_score', 0)
                     final_grade = (raw_p * 0.2) + (a_score * 0.2) + (q_score * 0.2) + (e_score * 0.4)
+                    
+                    # Store in session state for cross-module access
+                    st.session_state['final_grade'] = final_grade
                     scores = {"Participation": raw_p, "Assignments": a_score, "Quizzes": q_score, "Exam": e_score}
                     primary_weakness = min(scores, key=scores.get)
+                    st.session_state['current_weakness'] = primary_weakness
             except Exception:
-                st.sidebar.warning("⚠️ Syncing limited on public link.")
+                st.sidebar.warning("⚠️ Syncing limited.")
 
-    # --- 5. ROUTING LOGIC ---
+    # --- 5. ROUTING LOGIC (FIXED NAMES) ---
     if st.session_state['user_role'] == "Teacher":
         render_header("Teacher Console", "Academic Performance & Data Management")
         
-        if st.session_state['page'] == "Teacher Analytics":
+        # Matches nav labels exactly
+        if st.session_state['page'] == "Teacher Dashboard":
             teacher.render_teacher_dashboard(supabase)
         elif st.session_state['page'] == "AI Model Metrics":
             aimetrics.render_teacher_metrics(supabase)
     else:
         render_header("Student Portal", "Adaptive Learning & Growth Analysis")
         
-        if st.session_state['page'] == "Performance Dashboard":
+        # Matches nav labels exactly
+        if st.session_state['page'] == "Dashboard":
             student.render_student_dashboard(supabase)
-        elif st.session_state['page'] == "Diagnostic Lab":
-            fg = st.session_state.get('final_grade', 0)
-            pw = st.session_state.get('current_weakness', "Core Concepts")
+        elif st.session_state['page'] == "Practice Quiz":
+            # Using current calculated values
+            fg = st.session_state.get('final_grade', final_grade)
+            pw = st.session_state.get('current_weakness', primary_weakness)
             quiz_engine.render_practice_quiz(fg, pw)
