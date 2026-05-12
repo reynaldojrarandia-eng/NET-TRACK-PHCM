@@ -41,7 +41,16 @@ def render_teacher_metrics(supabase):
             z = cm.tolist() if cm.size == 4 else [[len(df), 0], [0, 0]]
             x_labels = ['Predicted: Safe', 'Predicted: At-Risk']
             y_labels = ['Actually: Safe', 'Actually: At-Risk']
-            return ff.create_annotated_heatmap(z, x=x_labels, y=y_labels, colorscale='Blues')
+
+            fig = ff.create_annotated_heatmap(z, x=x_labels, y=y_labels, colorscale='Blues')
+
+            fig.update_layout(
+                height=400, 
+                margin=dict(l=20, r=20, t=40, b=20),
+                xaxis_title="Prediction Outcome",
+                yaxis_title="Actual Status"
+            )
+            return fig
 
         with tab1:
             st.plotly_chart(create_matrix_chart(df['RF_Pred']), use_container_width=True)
