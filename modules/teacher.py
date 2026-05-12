@@ -2,7 +2,6 @@ import streamlit as st
 import pandas as pd
 import openpyxl
 import time
-import io
 from rapidfuzz import process, utils
 
 def render_teacher_dashboard(supabase):
@@ -12,7 +11,7 @@ def render_teacher_dashboard(supabase):
     if res.data:
         df = pd.DataFrame(res.data).drop_duplicates(subset=['student_id'])
         
-        # --- FIX: UNIFIED STATUS LOGIC ---
+        # Consistent Status Logic Fix
         def calculate_status(row):
             grade = row['total_weighted_grade']
             absences = row['absent_count']
@@ -31,7 +30,6 @@ def render_teacher_dashboard(supabase):
         avg_grade = df['total_weighted_grade'].mean()
         avg_absent = df['absent_count'].mean()
         avg_participation = df['participation_score'].mean()
-        # Updated At-Risk count to match new logic
         at_risk_count = df[df['Status'] == "🚩 At Risk"].shape[0]
         
         m1.metric("Avg. Absences", f"{avg_absent:.1f}", delta="-0.2", delta_color="inverse")
@@ -41,25 +39,23 @@ def render_teacher_dashboard(supabase):
         
         st.divider()
 
-        # Search Feature
         search_query = st.text_input("🔍 Search Student ID or Name", "")
+        display_df = df.copy()
         if search_query:
-            df = df[df['student_id'].str.contains(search_query, case=False)]
+            display_df = df[df['student_id'].str.contains(search_query, case=False)]
 
         st.subheader(" 📋  Student Masterlist")
-        # Display the editor with the updated Status column
         edited_df = st.data_editor(
-            df[['Status', 'student_id', 'absent_count', 'total_weighted_grade', 'participation_score', 'assignment_score', 'quiz_score', 'exam_score']], 
+            display_df[['Status', 'student_id', 'absent_count', 'total_weighted_grade', 'participation_score', 'assignment_score', 'quiz_score', 'exam_score']], 
             use_container_width=True,
             hide_index=True,
-            key="teacher_data_editor"
+            key="teacher_editor_v1"
         )
 
-        # Restore Save and Download Buttons
-        btn_col1, btn_col2 = st.columns([1, 4])
-        with btn_col1:
+        col1, col2 = st.columns([1, 4])
+        with col1:
             if st.button("💾 Save Changes to Database"):
-                with st.spinner("Updating records..."):
+                with st.spinner("Updating..."):
                     for _, row in edited_df.iterrows():
                         supabase.table("student_analytics").update({
                             "absent_count": row['absent_count'],
@@ -72,18 +68,16 @@ def render_teacher_dashboard(supabase):
                     time.sleep(1)
                     st.rerun()
 
-        with btn_col2:
-            output = io.BytesIO()
-            with pd.ExcelWriter(output, engine='xlsxwriter') as writer:
-                df.to_excel(writer, index=False, sheet_name='StudentGrades')
+        with col2:
+            # Reverted to CSV to avoid xlsxwriter dependency
+            csv = df.to_csv(index=False).encode('utf-8')
             st.download_button(
-                label="📥 Download Grade Report (Excel)",
-                data=output.getvalue(),
-                file_name="student_grade_report.xlsx",
-                mime="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"
+                label="📥 Download Grade Report (CSV)",
+                data=csv,
+                file_name="student_grade_report.csv",
+                mime="text/csv"
             )
 
-    # Bulk Upload Section
     st.divider()
     st.subheader(" 📂  Bulk Update Grades")
     uploaded_file = st.file_uploader("Upload Excel/CSV Template", type=['xlsx', 'csv'])
@@ -95,19 +89,18 @@ def render_teacher_dashboard(supabase):
             else:
                 input_df = pd.read_csv(uploaded_file)
             
-            st.write("Preview of Uploaded Data:")
+            st.write("Preview:")
             st.dataframe(input_df.head(), use_container_width=True)
 
             if st.button("Confirm and Sync to Supabase"):
-                with st.spinner("Processing file..."):
+                with st.spinner("Syncing..."):
                     updates = []
                     for _, row in input_df.iterrows():
                         p = row.get('participation_score', 0)
                         a = row.get('assignment_score', 0)
                         q = row.get('quiz_score', 0)
                         e = row.get('exam_score', 0)
-                        calc_grade = (p*0.2) + (a*0.2) + (q*0.2) + (e*0.4)
-                        
+                        calc = (p*0.2) + (a*0.2) + (q*0.2) + (e*0.4)
                         updates.append({
                             "student_id": row['student_id'],
                             "absent_count": row.get('absent_count', 0),
@@ -115,12 +108,10 @@ def render_teacher_dashboard(supabase):
                             "assignment_score": a,
                             "quiz_score": q,
                             "exam_score": e,
-                            "total_weighted_grade": round(calc_grade, 2)
+                            "total_weighted_grade": round(calc, 2)
                         })
-                    
-                    result = supabase.table("student_analytics").upsert(updates, on_conflict="student_id").execute()
-                    if result.data:
-                        st.success(f"Successfully updated {len(result.data)} students!")
-                        st.rerun()
+                    supabase.table("student_analytics").upsert(updates, on_conflict="student_id").execute()
+                    st.success("Sync Complete!")
+                    st.rerun()
         except Exception as e:
-            st.error(f"Error processing file: {e}")
+            st.error(f"Error: {e}")
