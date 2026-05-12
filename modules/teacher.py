@@ -6,12 +6,14 @@ from rapidfuzz import process, utils
 
 def render_teacher_dashboard(supabase):
     st.title(" 👨‍🏫  Faculty Grade Management")
+    
+    # 1. Fetch Data
     res = supabase.table("student_analytics").select("*").execute()
     
     if res.data:
         df = pd.DataFrame(res.data).drop_duplicates(subset=['student_id'])
         
-        # Consistent Status Logic Fix
+        # Status Logic Fix: Grade < 75 OR Absences >= 3
         def calculate_status(row):
             grade = row['total_weighted_grade']
             absences = row['absent_count']
@@ -24,6 +26,7 @@ def render_teacher_dashboard(supabase):
         
         df['Status'] = df.apply(calculate_status, axis=1)
 
+        # 2. TOP METRICS (Original 4-column layout)
         st.subheader(" 📊  Class Insights")
         m1, m2, m3, m4 = st.columns(4)
         
@@ -39,21 +42,33 @@ def render_teacher_dashboard(supabase):
         
         st.divider()
 
+        # 3. SEARCH BAR
         search_query = st.text_input("🔍 Search Student ID or Name", "")
         display_df = df.copy()
         if search_query:
             display_df = df[df['student_id'].str.contains(search_query, case=False)]
 
+        # 4. STUDENT MASTERLIST (Restored Participation Bar)
         st.subheader(" 📋  Student Masterlist")
         edited_df = st.data_editor(
             display_df[['Status', 'student_id', 'absent_count', 'total_weighted_grade', 'participation_score', 'assignment_score', 'quiz_score', 'exam_score']], 
+            column_config={
+                "participation_score": st.column_config.ProgressColumn(
+                    "Participation Score",
+                    help="Visual tracking of engagement",
+                    format="%f%%",
+                    min_value=0,
+                    max_value=100,
+                ),
+            },
             use_container_width=True,
             hide_index=True,
-            key="teacher_editor_v1"
+            key="teacher_table_v_original"
         )
 
-        col1, col2 = st.columns([1, 4])
-        with col1:
+        # 5. BUTTON ARRANGEMENT (1:4 Ratio)
+        btn_col1, btn_col2 = st.columns([1, 4])
+        with btn_col1:
             if st.button("💾 Save Changes to Database"):
                 with st.spinner("Updating..."):
                     for _, row in edited_df.iterrows():
@@ -68,8 +83,8 @@ def render_teacher_dashboard(supabase):
                     time.sleep(1)
                     st.rerun()
 
-        with col2:
-            # Reverted to CSV to avoid xlsxwriter dependency
+        with btn_col2:
+            # CSV Download - No extra libraries required
             csv = df.to_csv(index=False).encode('utf-8')
             st.download_button(
                 label="📥 Download Grade Report (CSV)",
@@ -78,18 +93,15 @@ def render_teacher_dashboard(supabase):
                 mime="text/csv"
             )
 
+    # 6. BULK UPLOAD (Restored Design)
     st.divider()
     st.subheader(" 📂  Bulk Update Grades")
     uploaded_file = st.file_uploader("Upload Excel/CSV Template", type=['xlsx', 'csv'])
     
     if uploaded_file:
         try:
-            if uploaded_file.name.endswith('.xlsx'):
-                input_df = pd.read_excel(uploaded_file)
-            else:
-                input_df = pd.read_csv(uploaded_file)
-            
-            st.write("Preview:")
+            input_df = pd.read_excel(uploaded_file) if uploaded_file.name.endswith('.xlsx') else pd.read_csv(uploaded_file)
+            st.write("Preview of Uploaded Data:")
             st.dataframe(input_df.head(), use_container_width=True)
 
             if st.button("Confirm and Sync to Supabase"):
@@ -111,7 +123,7 @@ def render_teacher_dashboard(supabase):
                             "total_weighted_grade": round(calc, 2)
                         })
                     supabase.table("student_analytics").upsert(updates, on_conflict="student_id").execute()
-                    st.success("Sync Complete!")
+                    st.success("Bulk update successful!")
                     st.rerun()
         except Exception as e:
             st.error(f"Error: {e}")
