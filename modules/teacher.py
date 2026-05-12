@@ -49,8 +49,8 @@ def render_teacher_dashboard(supabase):
             display_df = df[df['student_id'].str.contains(search_query, case=False)]
 
         # 4. STUDENT MASTERLIST (Restored Participation Bar)
-        st.subheader(" 📋  Student Masterlist")
-        edited_df = st.data_editor(
+        st.subheader("📝 Class Grade Sheet")
+        updated_df = st.data_editor(
             display_df[['Status', 'student_id', 'absent_count', 'total_weighted_grade', 'participation_score', 'assignment_score', 'quiz_score', 'exam_score']], 
             column_config={
                 "participation_score": st.column_config.ProgressColumn(
@@ -66,64 +66,54 @@ def render_teacher_dashboard(supabase):
             key="teacher_table_v_original"
         )
 
-        # 5. BUTTON ARRANGEMENT (1:4 Ratio)
-        btn_col1, btn_col2 = st.columns([1, 4])
-        with btn_col1:
-            if st.button("💾 Save Changes to Database"):
-                with st.spinner("Updating..."):
-                    for _, row in edited_df.iterrows():
-                        supabase.table("student_analytics").update({
-                            "absent_count": row['absent_count'],
-                            "participation_score": row['participation_score'],
-                            "assignment_score": row['assignment_score'],
-                            "quiz_score": row['quiz_score'],
-                            "exam_score": row['exam_score']
-                        }).eq("student_id", row['student_id']).execute()
-                    st.success("Database Updated!")
-                    time.sleep(1)
-                    st.rerun()
-
-        with btn_col2:
-            # CSV Download - No extra libraries required
-            csv = df.to_csv(index=False).encode('utf-8')
-            st.download_button(
-                label="📥 Download Grade Report (CSV)",
-                data=csv,
-                file_name="student_grade_report.csv",
-                mime="text/csv"
-            )
-
-    # 6. BULK UPLOAD (Restored Design)
-    st.divider()
-    st.subheader(" 📂  Bulk Update Grades")
-    uploaded_file = st.file_uploader("Upload Excel/CSV Template", type=['xlsx', 'csv'])
-    
-    if uploaded_file:
-        try:
-            input_df = pd.read_excel(uploaded_file) if uploaded_file.name.endswith('.xlsx') else pd.read_csv(uploaded_file)
-            st.write("Preview of Uploaded Data:")
-            st.dataframe(input_df.head(), use_container_width=True)
-
-            if st.button("Confirm and Sync to Supabase"):
-                with st.spinner("Syncing..."):
+        if st.button("Save Changes to Database 🔄", type="primary", use_container_width=True):
+            if updated_df is not None:
+                with st.spinner("🚀 Synchronizing with Supabase..."):
                     updates = []
-                    for _, row in input_df.iterrows():
-                        p = row.get('participation_score', 0)
-                        a = row.get('assignment_score', 0)
-                        q = row.get('quiz_score', 0)
-                        e = row.get('exam_score', 0)
-                        calc = (p*0.2) + (a*0.2) + (q*0.2) + (e*0.4)
+                    
+                    for index, row in updated_df.iterrows():
+                        p_score = float(row['participation_score'])
+                        a_score = float(row['assignment_score'])
+                        q_score = float(row['quiz_score'])
+                        e_score = float(row['exam_score'])
+                        
+                        calc_grade = (p_score * 0.2) + (a_score * 0.2) + (q_score * 0.2) + (e_score * 0.4)
+                        
                         updates.append({
-                            "student_id": row['student_id'],
-                            "absent_count": row.get('absent_count', 0),
-                            "participation_score": p,
-                            "assignment_score": a,
-                            "quiz_score": q,
-                            "exam_score": e,
-                            "total_weighted_grade": round(calc, 2)
+                            "student_id": str(row['student_id']),
+                            "absent_count": int(row['absent_count']),
+                            "participation_score": p_score,
+                            "assignment_score": a_score,
+                            "quiz_score": q_score,
+                            "exam_score": e_score,
+                            "total_weighted_grade": round(calc_grade, 2)
                         })
-                    supabase.table("student_analytics").upsert(updates, on_conflict="student_id").execute()
-                    st.success("Bulk update successful!")
-                    st.rerun()
-        except Exception as e:
-            st.error(f"Error: {e}")
+
+                    try:
+                        result = supabase.table("student_analytics").upsert(updates, on_conflict="student_id").execute()
+                        
+                        if result.data:
+                            st.cache_data.clear() 
+                            st.success(f"✅ Database Updated! {len(result.data)} rows modified.")
+                            time.sleep(1)
+                            st.rerun() 
+                        else:
+                            st.error("⚠️ Supabase accepted the request but no data was changed.")
+                    except Exception as e:
+                        st.error(f"❌ Sync failed: {str(e)}")
+            else:
+                st.warning("No changes detected in the editor.")
+
+        st.divider()
+        st.subheader("📄 Export Report")
+        st.write("Download the current grade records for official university documentation.")
+        export_df = df.copy()
+        csv_data = export_df.to_csv(index=False).encode('utf-8-sig')
+
+        st.download_button(
+            label="📥 Download Grade Report (CSV)",
+            data=csv_data,
+            file_name=f'NETTRACK_Grades_{time.strftime("%Y%m%d")}.csv',
+            mime='text/csv',
+            use_container_width=True
+        )
