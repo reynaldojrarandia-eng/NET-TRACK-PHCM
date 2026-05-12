@@ -14,7 +14,7 @@ def render_teacher_dashboard(supabase):
     if res.data:
         df = pd.DataFrame(res.data).drop_duplicates(subset=['student_id'])
         
-        # FIX: Unified Status Logic for Thesis Accuracy
+        # Consistent Status Logic for Thesis Accuracy
         def calculate_status(row):
             grade = row['total_weighted_grade']
             absences = row['absent_count']
@@ -43,13 +43,13 @@ def render_teacher_dashboard(supabase):
         
         st.divider()
         
-        # 3. Search Bar (Restored)
-        search_query = st.text_input("🔍 Search Student ID or Name", placeholder="Enter ID...")
+        # 3. Search Bar
+        search_query = st.text_input("🔍 Search Student ID or Name", placeholder="Type to filter...")
         display_df = df.copy()
         if search_query:
             display_df = df[df['student_id'].str.contains(search_query, case=False)]
 
-        # 4. Main Data Editor (Restored Columns)
+        # 4. Main Data Editor
         st.subheader("📋 Student Masterlist")
         edited_df = st.data_editor(
             display_df[['Status', 'student_id', 'absent_count', 'total_weighted_grade', 'participation_score', 'assignment_score', 'quiz_score', 'exam_score']], 
@@ -58,7 +58,7 @@ def render_teacher_dashboard(supabase):
             key="main_table_editor"
         )
 
-        # 5. Action Buttons (Restored Save & Download)
+        # 5. Action Buttons (Save & Download)
         col1, col2 = st.columns([1, 4])
         with col1:
             if st.button("💾 Save Changes to Database"):
@@ -86,7 +86,7 @@ def render_teacher_dashboard(supabase):
                 mime="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"
             )
 
-    # 6. Bulk Update Section (Restored)
+    # 6. Bulk Update Section
     st.divider()
     st.subheader("📂 Bulk Update Grades")
     uploaded_file = st.file_uploader("Upload Excel/CSV Template", type=['xlsx', 'csv'])
@@ -124,4 +124,4 @@ def render_teacher_dashboard(supabase):
                     st.success("Bulk update successful!")
                     st.rerun()
         except Exception as e:
-            st.error(f"Error: {e}")
+            st.error(f"Error processing file: {e}")
