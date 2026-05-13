@@ -67,7 +67,7 @@ def render_teacher_dashboard(supabase):
                 with st.spinner("🚀 Synchronizing with Supabase..."):
                     updates = []
                     
-                    for _, row in updated_df.iterrows():
+                    for index, row in updated_df.iterrows():
                         p_score = float(row['participation_score'])
                         a_score = float(row['assignment_score'])
                         q_score = float(row['quiz_score'])
