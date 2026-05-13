@@ -68,11 +68,12 @@ def render_teacher_dashboard(supabase):
                     updates = []
                     
                     for index, row in updated_df.iterrows():
-                        p_score = float(row['participation_score'])
+                        absences = int(row['absent_count'])
                         a_score = float(row['assignment_score'])
                         q_score = float(row['quiz_score'])
                         e_score = float(row['exam_score'])
-                        absences = int(row['absent_count'])
+
+                        p_score = max(0, 100 - (absences * 5))
     
                         calc_grade = (p_score * 0.2) + (a_score * 0.2) + (q_score * 0.2) + (e_score * 0.4)
                         
