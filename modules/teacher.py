@@ -53,17 +53,13 @@ def render_teacher_dashboard(supabase):
         updated_df = st.data_editor(
             display_df[['Status', 'student_id', 'absent_count', 'total_weighted_grade', 'participation_score', 'assignment_score', 'quiz_score', 'exam_score']], 
             column_config={
-                "participation_score": st.column_config.ProgressColumn(
-                    "Participation Score",
-                    help="Visual tracking of engagement",
-                    format="%f%%",
-                    min_value=0,
-                    max_value=100,
-                ),
+                "Status": st.column_config.TextColumn("Status", disabled=True),
+                "total_weighted_grade": st.column_config.NumberColumn("Total Grade (%)", help="Auto-calculates on save", disabled=True),
+                "participation_score": st.column_config.ProgressColumn("Participation Score", format="%f%%", min_value=0, max_value=100),   
             },
             use_container_width=True,
             hide_index=True,
-            key="teacher_table_v_original"
+            key="teacher_table_live"
         )
 
         if st.button("Save Changes to Database 🔄", type="primary", use_container_width=True):
@@ -72,20 +68,18 @@ def render_teacher_dashboard(supabase):
                     updates = []
                     
                     for index, row in updated_df.iterrows():
-                        p_score = float(row['participation_score'])
-                        a_score = float(row['assignment_score'])
-                        q_score = float(row['quiz_score'])
-                        e_score = float(row['exam_score'])
-                        
-                        calc_grade = (p_score * 0.2) + (a_score * 0.2) + (q_score * 0.2) + (e_score * 0.4)
+                        calc_grade = (float(row['participation_score']) * 0.2) + \
+                                (float(row['assignment_score']) * 0.2) + \
+                                (float(row['quiz_score']) * 0.2) + \
+                                (float(row['exam_score']) * 0.4)
                         
                         updates.append({
                             "student_id": str(row['student_id']),
                             "absent_count": int(row['absent_count']),
-                            "participation_score": p_score,
-                            "assignment_score": a_score,
-                            "quiz_score": q_score,
-                            "exam_score": e_score,
+                            "participation_score": float(row['participation_score']),
+                            "assignment_score": float(row['assignment_score']),
+                            "quiz_score": float(row['quiz_score']),
+                            "exam_score": float(row['exam_score']),
                             "total_weighted_grade": round(calc_grade, 2)
                         })
 
